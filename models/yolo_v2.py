@@ -4,16 +4,16 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torchvision import models
 import torch.utils.model_zoo as model_zoo
-from utils import Conv2d
+from utils import Conv2d, reorg_layer
 from backbone import *
+import os
 import numpy as np
 import tools
 
 class myYOLOv2(nn.Module):
-    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.01, nms_thresh=0.45, anchor_size=None, hr=False):
+    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.01, nms_thresh=0.5, anchor_size=None, hr=False):
         super(myYOLOv2, self).__init__()
         self.device = device
-        self.input_size = input_size
         self.num_classes = num_classes
         self.trainable = trainable
         self.conf_thresh = conf_thresh
@@ -28,17 +28,21 @@ class myYOLOv2(nn.Module):
             self.scale_torch = torch.tensor(self.scale.copy()).float()
 
         # backbone darknet-19
-        self.backbone = darknet19(pretrained=trainable)
+        self.backbone = darknet19(pretrained=trainable, hr=hr)
         
         # detection head
         self.convsets_1 = nn.Sequential(
             Conv2d(1024, 1024, 3, 1, leakyReLU=True),
             Conv2d(1024, 1024, 3, 1, leakyReLU=True)
         )
-        self.route_alyer = nn.Sequential(
-            Conv2d(512, 64, 1, leakyReLU=True),
-            Conv2d(64, 256, 3, padding=1, stride=2, leakyReLU=True)
-        )
+        # self.route_alyer = nn.Sequential(
+        #     Conv2d(512, 64, 1, leakyReLU=True),
+        #     Conv2d(64, 256, 3, padding=1, stride=2, leakyReLU=True)
+        # )
+
+        self.route_layer = Conv2d(512, 64, 1, leakyReLU=True)
+        self.reorg = reorg_layer(stride=2)
+
         self.convsets_2 = Conv2d(1280, 1024, 3, 1, leakyReLU=True)
         
         # prediction layer
@@ -181,7 +185,7 @@ class myYOLOv2(nn.Module):
         fp_2 = self.convsets_1(fp_2)
 
         # route from 16th layer in darknet
-        fp_1 = self.route_alyer(fp_1)
+        fp_1 = self.reorg(self.route_layer(fp_1))
 
         # route concatenate
         fp = torch.cat([fp_1, fp_2], dim=1)

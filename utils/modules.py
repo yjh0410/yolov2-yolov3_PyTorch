@@ -16,6 +16,7 @@ def get_device(gpu_ind):
 
     return device
 
+
 class Conv2d(nn.Module):
     def __init__(self, in_channels, out_channels, ksize, padding=0, stride=1, dilation=1, leakyReLU=False):
         super(Conv2d, self).__init__()
@@ -27,3 +28,19 @@ class Conv2d(nn.Module):
 
     def forward(self, x):
         return self.convs(x)
+
+class reorg_layer(nn.Module):
+    def __init__(self, stride):
+        super(reorg_layer, self).__init__()
+        self.stride = stride
+
+    def forward(self, x):
+        batch_size, channels, height, width = x.size()
+        _height, _width = height // self.stride, width // self.stride
+        
+        x = x.view(batch_size, channels, _height, self.stride, _width, self.stride).transpose(3, 4).contiguous()
+        x = x.view(batch_size, channels, _height * _width, self.stride * self.stride).transpose(2, 3).contiguous()
+        x = x.view(batch_size, channels, self.stride * self.stride, _height, _width).transpose(1, 2).contiguous()
+        x = x.view(batch_size, -1, _height, _width)
+
+        return x

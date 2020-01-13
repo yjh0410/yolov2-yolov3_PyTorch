@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import argparse
 from models.yolo_v2 import myYOLOv2
 
-import torchvision.transforms as TF
 
 parser = argparse.ArgumentParser(description='YOLO-v2 Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
@@ -24,12 +23,14 @@ parser.add_argument('-v', '--version', default='yolo_v2',
 parser.add_argument('-d', '--dataset', default='VOC',
                     help='VOC or COCO dataset')
 parser.add_argument('-hr', '--high_resolution', type=int, default=0,
-                    help='0: use high resolution to pretrain; 1: else not.')                    
+                    help='1: use high resolution to pretrain; 0: else not.')  
+parser.add_argument('-ms', '--multi_scale', type=int, default=0,
+                    help='1: use multi-scale trick; 0: else not')                  
 parser.add_argument('-fl', '--use_focal', type=int, default=0,
                     help='0: use focal loss; 1: else not;')
 parser.add_argument('--batch_size', default=64, type=int, 
                     help='Batch size for training')
-parser.add_argument('--lr', default=1e-3, type=int, 
+parser.add_argument('--lr', default=1e-3, type=float, 
                     help='initial learning rate')
 parser.add_argument('-wp', '--warm_up', type=str, default='yes',
                     help='yes or no to choose using warmup strategy to train')
@@ -74,16 +75,20 @@ def train(model, device):
         print("Let's use focal loss for objectness !!!")
         use_focal = True
 
+    if args.multi_scale == 1:
+        print('Let us use the multi-scale trick.')
+        ms_inds = range(len(cfg['multi_scale']))
+        dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation([608, 608], MEANS))
 
-    dataset = VOCDetection(root=args.dataset_root,
-                            transform=SSDAugmentation(cfg['min_dim'],
-                                                        MEANS))
+    else:
+        dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation(cfg['min_dim'], MEANS))
 
     from torch.utils.tensorboard import SummaryWriter
-    log_path = 'log/yolo_v2/voc2007/'
+    c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+    log_path = 'log/yolo_v2/voc2007/' + c_time
     if not os.path.exists(log_path):
         os.mkdir(log_path)
-    log_path = 'log/yolo_v2/voc2007/' + '/' + str(IGNORE_THRESH)
+    log_path = 'log/yolo_v2/voc2007/' + c_time + '/' + str(IGNORE_THRESH)
     if not os.path.exists(log_path):
         os.mkdir(log_path)
 
@@ -103,6 +108,7 @@ def train(model, device):
     print('Training on:', dataset.name)
     print('The dataset size:', len(dataset))
 
+    input_size = cfg['min_dim']
     step_index = 0
     epoch_size = len(dataset) // args.batch_size
     # each part of loss weight
@@ -119,11 +125,9 @@ def train(model, device):
 
     # start training
     for epoch in range(cfg['max_epoch']):
-        # torch.save(yolo_net.state_dict(), save_folder+ '/' + args.version + '_' +
-        #         repr(epoch + 1) + '.pth')
         batch_iterator = iter(data_loader)
         
-        # No WarmUp strategy or WarmUp tage has finished.
+        # No WarmUp strategy or WarmUp stage has finished.
         if epoch in cfg['lr_epoch']:
             step_index += 1
             adjust_learning_rate(optimizer, args.gamma, step_index)
@@ -134,10 +138,18 @@ def train(model, device):
                 if epoch < args.wp_epoch:
                     warmup_strategy(optimizer, args.gamma, epoch, epoch_size, iteration)
             iteration += 1
-            # load train data
-            # images, targets = next(batch_iterator)
+            
+            # multi-scale trick
+            if iteration % 10 == 0 and args.multi_scale == 1:
+                ms_ind = random.sample(ms_inds, 1)[0]
+                input_size = cfg['multi_scale'][int(ms_ind)]
+            
+            # multi scale
+            if args.multi_scale == 1:
+                images = torch.nn.functional.interpolate(images, size=input_size, mode='bilinear', align_corners=True)
+
             targets = [label.tolist() for label in targets]
-            targets = tools.gt_creator(cfg['min_dim'], yolo_net.stride, args.num_classes, targets)
+            targets = tools.gt_creator(input_size, yolo_net.stride, args.num_classes, targets)
             
             targets = torch.tensor(targets).float().to(device)
 
@@ -161,7 +173,7 @@ def train(model, device):
 
             if iteration % 10 == 0:
                 print('timer: %.4f sec.' % (t1 - t0))
-                print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (total_loss.item()) + ' || lr: %.8f ||' % (lr), end=' ')
+                print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (total_loss.item()) + ' || lr: %.8f ||' % (lr) + ' || input size: %d ||' % input_size[0], end=' ')
 
         if (epoch + 1) % 10 == 0:
             print('Saving state, epoch:', epoch + 1)
@@ -192,7 +204,7 @@ if __name__ == '__main__':
     cfg = voc_ab
     total_anchor_size = tools.get_total_anchor_size(cfg['min_dim'], cfg['stride'])
     
-    yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+    yolo_net = myYOLOv2(device, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
     print('Let us train yolo-v2 on the VOC0712 dataset ......')
     
     train(yolo_net, device)
