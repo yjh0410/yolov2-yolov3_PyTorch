@@ -169,8 +169,7 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
     c_y_s = c_y / s
     box_ws = box_w / s
     box_hs = box_h / s
-
-
+    
     # the gride cell location
     grid_x = int(c_x_s)
     grid_y = int(c_y_s)
@@ -324,7 +323,7 @@ def loss(pred, label, num_classes, strides=None, input_size=None, use_focal=Fals
     
     # box loss
     box_loss_xy = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_xy, gt_box[:, :, :2]), 2) * gt_obj, 1))
-    box_loss_wh = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_wh, gt_box[:, :, 2:]), 2) * gt_obj, 1))
+    box_loss_wh = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_wh, gt_box[:, :, 2:]), 2) * gt_obj * gt_box_scale_weight, 1))
 
     box_loss = box_loss_xy + box_loss_wh
 
@@ -339,4 +338,3 @@ if __name__ == "__main__":
                              ])
     iou = compute_iou(anchor_boxes, gt_box)
     print(iou)
-
