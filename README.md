@@ -15,7 +15,7 @@ Before I tell you guys how to use this project, I must say something about diffe
 
 - For data augmentation, I copy the augmentation codes from the https://github.com/amdegroot/ssd.pytorch which is a superb project reproducing the SSD. If anyone is interested in SSD, just clone it to learn !(Don't forget to star it !)
 
-My yolo-v2 got 73.0 mAP on VOC2007 test with input resolution 416 image size, lower than origin yolo-v2 that got 76.8% mAP with the same image size. This is maybe because that there are two tricks I didn't use:
+My yolo-v2 got 73.4 mAP with 416 input and 75.2 mAP with 608 input on VOC2007 test, lower than origin yolo-v2 that got 76.8% mAP with the same image size. This is maybe because that there are two tricks that didn't work:
 
 1. hi-res classifier
 
@@ -24,6 +24,8 @@ The darknet19-448 has been trained and got 75.52 top-1 acc. But it doesn't bring
 2. multi-scale train
 
 It doesn't work, too. Although it does make my model robust to more input size (from 320 to 608), it didn't bring any increase on mAP with 416 resolution.
+
+My loss function and groundtruth creator both in the ```tools.py```, and you can try to change some parameters to improve the model.
 
 ## Installation
 - Pytorch-gpu 1.1.0
