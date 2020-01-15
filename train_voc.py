@@ -84,11 +84,7 @@ def train(model, device):
         dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation(cfg['min_dim'], MEANS))
 
     from torch.utils.tensorboard import SummaryWriter
-    c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-    log_path = 'log/yolo_v2/voc2007/' + c_time
-    if not os.path.exists(log_path):
-        os.mkdir(log_path)
-    log_path = 'log/yolo_v2/voc2007/' + c_time + '/' + str(IGNORE_THRESH)
+    log_path = 'log/yolo_v2/voc2007/'
     if not os.path.exists(log_path):
         os.mkdir(log_path)
 
