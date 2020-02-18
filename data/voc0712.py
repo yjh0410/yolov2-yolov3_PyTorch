@@ -27,6 +27,8 @@ VOC_CLASSES = (  # always index 0
 path_to_dir = osp.dirname(osp.abspath(__file__))
 VOC_ROOT = path_to_dir + "/VOCdevkit/"
 
+VOC_ROOT = 'E:/python_work/OD/yolo-guide/data/VOCdevkit/'
+
 
 class VOCAnnotationTransform(object):
     """Transforms a VOC annotation into a Tensor of bbox coords and label index
