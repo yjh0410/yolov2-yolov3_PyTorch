@@ -40,7 +40,7 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
         print('Testing image {:d}/{:d}....'.format(index+1, num_images))
         img = testset.pull_image(index)
         # img_id, annotation = testset.pull_anno(i)
-        x = torch.from_numpy(transform(img)[0]).permute(2, 0, 1)
+        x = torch.from_numpy(transform(img)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
         x = x.unsqueeze(0).to(device)
 
         t0 = time.clock()
@@ -82,9 +82,14 @@ def test():
     testset = VOCDetection(args.voc_root, [('2007', 'test')], None, VOCAnnotationTransform())
     mean = config.MEANS
 
-    print('Let us test yolo-v2 on the VOC0712 dataset ......')
     cfg = config.voc_ab
-    net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+    if args.version == 'yolo_v2':
+        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        print('Let us test yolo-v2 on the VOC0712 dataset ......')
+    elif args.version == 'yolo_v3':
+        from models.yolo_v3 import myYOLOv3
+        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+
 
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
     net.to(device).eval()

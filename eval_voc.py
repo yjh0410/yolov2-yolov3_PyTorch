@@ -404,7 +404,11 @@ if __name__ == '__main__':
     num_classes = len(labelmap)
 
     cfg = config.voc_ab
-    net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+    if args.version == 'yolo_v2':
+        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+    elif args.version == 'yolo_v3':
+        from models.yolo_v3 import myYOLOv3
+        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
 
     # load net
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
