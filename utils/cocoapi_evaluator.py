@@ -81,7 +81,7 @@ class COCOAPIEvaluator():
                 y2 = float(box[3])
                 label = self.dataset.class_ids[int(cls_inds[i])]
                 
-                bbox = [y1, x1, y2 - y1, x2 - x1]
+                bbox = [x1, y1, x2 - x1, y2 - y1]
                 score = float(scores[i]) # object score * class score
                 A = {"image_id": id_, "category_id": label, "bbox": bbox,
                      "score": score, "segmentation": []} # COCO json format
