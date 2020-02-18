@@ -35,7 +35,7 @@ class myYOLOv2(nn.Module):
             Conv2d(1024, 1024, 3, 1, leakyReLU=True),
             Conv2d(1024, 1024, 3, 1, leakyReLU=True)
         )
-        # self.route_layer = nn.Sequential(
+        # self.route_alyer = nn.Sequential(
         #     Conv2d(512, 64, 1, leakyReLU=True),
         #     Conv2d(64, 256, 3, padding=1, stride=2, leakyReLU=True)
         # )
@@ -186,7 +186,6 @@ class myYOLOv2(nn.Module):
 
         # route from 16th layer in darknet
         fp_1 = self.reorg(self.route_layer(fp_1))
-        # fp_1 = self.route_layer(fp_1)
 
         # route concatenate
         fp = torch.cat([fp_1, fp_2], dim=1)
