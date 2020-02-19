@@ -47,6 +47,14 @@ As for now, I only train and test on PASCAL VOC2007 and 2012.
 I copy the download files from the following excellent project:
 https://github.com/amdegroot/ssd.pytorch
 
+I have uploaded the VOC2007 and VOC2012 to BaiDuYunDisk, so for researchers in China, you can download them from BaiDuYunDisk:
+
+Link：https://pan.baidu.com/s/1tYPGCYGyC0wjpC97H-zzMQ 
+
+Password：4la9
+
+You will get a ```VOCdevkit.zip```, then what you need to do is just to unzip it and put it into ```data/```. After that, the whole path to VOC dataset is ```data/VOCdevkit/VOC2007``` and ```data/VOCdevkit/VOC2012```.
+
 #### Download VOC2007 trainval & test
 
 ```Shell
