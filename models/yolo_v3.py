@@ -120,14 +120,10 @@ class myYOLOv3(nn.Module):
         if boxes.shape[0] == 0:
             return boxes
 
-        # x1 >= 0
-        boxes[:, 0::4] = np.maximum(np.minimum(boxes[:, 0::4], im_shape[1] - 1), 0)
-        # y1 >= 0
-        boxes[:, 1::4] = np.maximum(np.minimum(boxes[:, 1::4], im_shape[0] - 1), 0)
-        # x2 < im_shape[1]
-        boxes[:, 2::4] = np.maximum(np.minimum(boxes[:, 2::4], im_shape[1] - 1), 0)
-        # y2 < im_shape[0]
-        boxes[:, 3::4] = np.maximum(np.minimum(boxes[:, 3::4], im_shape[0] - 1), 0)
+        # 0 <= x1 and x2 < im_shape[1]
+        boxes[:, [0, 2]] = np.clip(boxes[:, [0, 2]], 0, im_shape[1]-1)
+        # 0 <= y1 and y2 < im_shape[0]
+        boxes[:, [1, 3]] = np.clip(boxes[:, [1, 3]], 0, im_shape[0]-1)
         return boxes
 
     def nms(self, dets, scores):
