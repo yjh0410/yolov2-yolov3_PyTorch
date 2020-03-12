@@ -24,7 +24,7 @@ class myYOLOv3(nn.Module):
             self.anchor_size[1, :] *= 2
             self.anchor_size[2, :] *= 1
             self.input_size = input_size
-            self.grid_cell, self.all_anchor_wh, self.stride_tensor = self.init_grid(input_size)
+            self.grid_cell, self.all_anchor_wh, self.stride_tensor = self.init_grid()
             self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
             self.scale_torch = torch.tensor(self.scale.copy()).float()
 
@@ -66,8 +66,7 @@ class myYOLOv3(nn.Module):
         self.extra_conv_1 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
         self.pred_1 = nn.Conv2d(256, self.anchor_number*(1 + 4 + self.num_classes), 1)
     
-    def init_grid(self, input_size):
-        s = self.stride
+    def init_grid(self):
         total = sum([(self.input_size[1]//s) * (self.input_size[0]//s) for s in self.stride])
         # [1, H*W, 1, 2]
         grid_cell = torch.zeros(1, total, self.anchor_number, 2).to(self.device)
@@ -121,14 +120,10 @@ class myYOLOv3(nn.Module):
         if boxes.shape[0] == 0:
             return boxes
 
-        # x1 >= 0
-        boxes[:, 0::4] = np.maximum(np.minimum(boxes[:, 0::4], im_shape[1] - 1), 0)
-        # y1 >= 0
-        boxes[:, 1::4] = np.maximum(np.minimum(boxes[:, 1::4], im_shape[0] - 1), 0)
-        # x2 < im_shape[1]
-        boxes[:, 2::4] = np.maximum(np.minimum(boxes[:, 2::4], im_shape[1] - 1), 0)
-        # y2 < im_shape[0]
-        boxes[:, 3::4] = np.maximum(np.minimum(boxes[:, 3::4], im_shape[0] - 1), 0)
+        # 0 <= x1 and x2 < im_shape[1]
+        boxes[:, [0, 2]] = np.clip(boxes[:, [0, 2]], 0, im_shape[1]-1)
+        # 0 <= y1 and y2 < im_shape[0]
+        boxes[:, [1, 3]] = np.clip(boxes[:, [1, 3]], 0, im_shape[0]-1)
         return boxes
 
     def nms(self, dets, scores):
