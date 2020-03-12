@@ -220,7 +220,7 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
         # We assign any anchor box whose IoU score is higher than ignore thresh.
         iou_ = iou * iou_mask
         for index, iou_score in enumerate(iou_):
-            if iou_score > ignore_thresh:
+            if iou_mask[index]:
                 p_w, p_h = all_anchor_size[index]
                 tx = c_x_s - grid_x
                 ty = c_y_s - grid_y
@@ -353,7 +353,7 @@ def multi_gt_creator(model, input_size, label_lists=[]):
                 # We assign any anchor box whose IoU score is higher than ignore thresh.
                 iou_ = iou * iou_mask
                 for index, iou_score in enumerate(iou_):
-                    if iou_score > ignore_thresh:
+                    if iou_mask[index]:
                         s_indx, ab_ind = index // num_scale, index % num_scale
                         # get the corresponding stride
                         s = strides[s_indx]
