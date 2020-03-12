@@ -331,7 +331,7 @@ def multi_gt_creator(input_size, strides, num_classes, label_lists=[], name='VOC
                 s = strides[s_indx]
                 # get the corresponding anchor box
                 p_w, p_h = all_anchor_size[index]
-                # compute the gride cell location
+                # compute the grid cell location
                 c_x_s = c_x / s
                 c_y_s = c_y / s
                 grid_x = int(c_x_s)
@@ -358,7 +358,7 @@ def multi_gt_creator(input_size, strides, num_classes, label_lists=[], name='VOC
                         s = strides[s_indx]
                         # get the corresponding anchor box
                         p_w, p_h = all_anchor_size[index]
-                        # compute the gride cell location
+                        # compute the grid cell location
                         c_x_s = c_x / s
                         c_y_s = c_y / s
                         grid_x = int(c_x_s)
