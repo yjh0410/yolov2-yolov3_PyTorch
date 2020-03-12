@@ -28,7 +28,7 @@ class myYOLOv3(nn.Module):
             self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
             self.scale_torch = torch.tensor(self.scale.copy()).float()
 
-        # backbone darknet-19
+        # backbone darknet-53
         self.backbone = darknet53(pretrained=trainable, hr=hr)
         
         # s = 32
