@@ -191,7 +191,7 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
     box_ws = box_w / s
     box_hs = box_h / s
     
-    # the gride cell location
+    # the grid cell location
     grid_x = int(c_x_s)
     grid_y = int(c_y_s)
     # generate anchor boxes
@@ -332,7 +332,7 @@ def multi_gt_creator(model, input_size, label_lists=[]):
                 s = strides[s_indx]
                 # get the corresponding anchor box
                 p_w, p_h = all_anchor_size[index]
-                # compute the gride cell location
+                # compute the grid cell location
                 c_x_s = c_x / s
                 c_y_s = c_y / s
                 grid_x = int(c_x_s)
@@ -359,7 +359,7 @@ def multi_gt_creator(model, input_size, label_lists=[]):
                         s = strides[s_indx]
                         # get the corresponding anchor box
                         p_w, p_h = all_anchor_size[index]
-                        # compute the gride cell location
+                        # compute the grid cell location
                         c_x_s = c_x / s
                         c_y_s = c_y / s
                         grid_x = int(c_x_s)
