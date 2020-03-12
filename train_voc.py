@@ -174,6 +174,11 @@ def train(model, device):
                                                         noobj=args.noobj)
             # print(obj_loss.item(), class_loss.item(), box_loss.item())
             total_loss = obj_w * obj_loss + cla_w * class_loss + box_w * box_loss
+            
+            if not torch.isfinite(total_loss):
+                print('WARNING: non-finite loss, ending training ')
+                exit(1)
+                
             # viz loss
             writer.add_scalar('object loss', obj_loss.item(), iteration)
             writer.add_scalar('class loss', class_loss.item(), iteration)
