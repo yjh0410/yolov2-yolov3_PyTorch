@@ -191,7 +191,7 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
     box_ws = box_w / s
     box_hs = box_h / s
     
-    # the gride cell location
+    # the grid cell location
     grid_x = int(c_x_s)
     grid_y = int(c_y_s)
     # generate anchor boxes
