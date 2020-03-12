@@ -279,16 +279,17 @@ def gt_creator(input_size, stride, num_classes, label_lists=[], name='VOC'):
 
     return gt_tensor
 
-def multi_gt_creator(input_size, strides, num_classes, label_lists=[], name='VOC'):
+def multi_gt_creator(model, input_size, label_lists=[]):
     """creator multi scales gt"""
     # prepare the all empty gt datas
     batch_size = len(label_lists)
     h, w = input_size
+    strides = model.stride
     num_scale = len(strides)
     gt_tensor = []
 
     # generate gt datas
-    all_anchor_size = get_total_anchor_size(multi_scale=True, name=name)
+    all_anchor_size = model.anchor_size.view(-1, 2)
     anchor_number = len(all_anchor_size) // num_scale
     for s in strides:
         gt_tensor.append(np.zeros([batch_size, h//s, w//s, anchor_number, 1+1+4+1]))
