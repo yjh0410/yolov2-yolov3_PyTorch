@@ -24,7 +24,7 @@ class myYOLOv3(nn.Module):
             self.anchor_size[1, :] *= 2
             self.anchor_size[2, :] *= 1
             self.input_size = input_size
-            self.grid_cell, self.all_anchor_wh, self.stride_tensor = self.init_grid(input_size)
+            self.grid_cell, self.all_anchor_wh, self.stride_tensor = self.init_grid()
             self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
             self.scale_torch = torch.tensor(self.scale.copy()).float()
 
@@ -66,8 +66,7 @@ class myYOLOv3(nn.Module):
         self.extra_conv_1 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
         self.pred_1 = nn.Conv2d(256, self.anchor_number*(1 + 4 + self.num_classes), 1)
     
-    def init_grid(self, input_size):
-        s = self.stride
+    def init_grid(self):
         total = sum([(self.input_size[1]//s) * (self.input_size[0]//s) for s in self.stride])
         # [1, H*W, 1, 2]
         grid_cell = torch.zeros(1, total, self.anchor_number, 2).to(self.device)
