@@ -8,3 +8,8 @@ But for researcher in China, you can download it from BaiduYunDisk:
 link：https://pan.baidu.com/s/1XnhTJqI_A6UZHXbyhyDYFw 
 
 password：52p0
+
+
+* for resarcher in other countries, you can download it from Google Drive:
+
+link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
