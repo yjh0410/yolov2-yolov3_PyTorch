@@ -10,6 +10,6 @@ link：https://pan.baidu.com/s/1XnhTJqI_A6UZHXbyhyDYFw
 password：52p0
 
 
-* for resarcher in other countries, you can download it from Google Drive:
+Also, you can download it from Google Drive:
 
 link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
