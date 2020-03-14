@@ -131,14 +131,13 @@ def train(model, device):
 
     # start training
     for epoch in range(cfg['max_epoch']):
-        batch_iterator = iter(data_loader)
-        
+
         # No WarmUp strategy or WarmUp stage has finished.
         if epoch in cfg['lr_epoch']:
             step_index += 1
             lr = adjust_learning_rate(optimizer, args.gamma, step_index)
 
-        for images, targets in batch_iterator:
+        for images, targets in data_loader:
             # WarmUp strategy for learning rate
             if args.warm_up == 'yes':
                 if epoch < args.wp_epoch:
