@@ -34,7 +34,7 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='YOLO-v2 Detector Evaluation')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolo_v2.')
+                    help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3.')
 parser.add_argument('-d', '--dataset', default='VOC',
                     help='VOC or COCO dataset')
 parser.add_argument('--trained_model', type=str,
@@ -406,9 +406,21 @@ if __name__ == '__main__':
     cfg = config.voc_ab
     if args.version == 'yolo_v2':
         net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+    
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
         net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+   
+    elif args.version == 'tiny_yolo_v2':
+        from models.tiny_yolo_v2 import myYOLOv2    
+        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        print('Let us eval tiny-yolo-v2 on the VOC0712 dataset ......')
+
+    elif args.version == 'tiny_yolo_v3':
+        from models.tiny_yolo_v3 import myYOLOv3
+    
+        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        print('Let us eval tiny-yolo-v3 on the VOC0712 dataset ......')
 
     # load net
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))

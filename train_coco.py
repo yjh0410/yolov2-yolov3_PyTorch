@@ -22,7 +22,7 @@ from models.yolo_v2 import myYOLOv2
 
 parser = argparse.ArgumentParser(description='YOLO-v1 Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolo_v2')
+                    help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-d', '--dataset', default='VOC',
                     help='VOC or COCO dataset')
 parser.add_argument('-hr', '--high_resolution', type=int, default=0,
@@ -254,6 +254,7 @@ if __name__ == '__main__':
     if args.version == 'yolo_v2':
         from models.yolo_v2 import myYOLOv2
         total_anchor_size = tools.get_total_anchor_size(name='COCO')
+        print(total_anchor_size)
         yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v2 on the MSCOCO dataset ......')
 
@@ -263,5 +264,19 @@ if __name__ == '__main__':
         
         yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v3 on the MSCOCO dataset ......')
+
+    elif args.version == 'tiny_yolo_v2':
+        from models.tiny_yolo_v2 import myYOLOv2
+        total_anchor_size = tools.get_total_anchor_size()
+    
+        yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train tiny-yolo-v2 on the MSCOCO dataset ......')
+
+    elif args.version == 'tiny_yolo_v3':
+        from models.tiny_yolo_v3 import myYOLOv3
+        total_anchor_size = tools.get_total_anchor_size(multi_scale=True)
+    
+        yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train tiny-yolo-v3 on the MSCOCO dataset ......')
 
     train(yolo_net, device)

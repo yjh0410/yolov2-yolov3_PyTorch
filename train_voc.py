@@ -14,12 +14,11 @@ import torch.utils.data as data
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-from models.yolo_v2 import myYOLOv2
 
 
 parser = argparse.ArgumentParser(description='YOLO-v2 Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolo_v2, yolo_v3')
+                    help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-d', '--dataset', default='VOC',
                     help='VOC or COCO dataset')
 parser.add_argument('-hr', '--high_resolution', type=int, default=0,
@@ -32,9 +31,9 @@ parser.add_argument('--batch_size', default=64, type=int,
                     help='Batch size for training')
 parser.add_argument('--lr', default=1e-3, type=float, 
                     help='initial learning rate')
-parser.add_argument('--obj', default=1.0, type=float,
+parser.add_argument('--obj', default=5.0, type=float,
                     help='the weight of obj loss')
-parser.add_argument('--noobj', default=0.5, type=float,
+parser.add_argument('--noobj', default=1.0, type=float,
                     help='the weight of noobj loss')
 parser.add_argument('-wp', '--warm_up', type=str, default='yes',
                     help='yes or no to choose using warmup strategy to train')
@@ -56,6 +55,8 @@ parser.add_argument('--gpu_ind', default=0, type=int,
                     help='To choose your gpu.')
 parser.add_argument('--save_folder', default='weights_yolo_v2/', type=str, 
                     help='Gamma update for SGD')
+parser.add_argument('--fine_tune', default=0, type=int,
+                    help='fine tune the model trained on MSCOCO.')
 
 args = parser.parse_args()
 
@@ -88,8 +89,8 @@ def train(model, device):
         dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation(cfg['min_dim'], MEANS))
 
     from torch.utils.tensorboard import SummaryWriter
-    # c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-    log_path = 'log/yolo_v2/voc2007/'# + c_time
+    c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+    log_path = 'log/yolo_v2/voc2007/' + c_time
     if not os.path.exists(log_path):
         os.mkdir(log_path)
 
@@ -104,6 +105,7 @@ def train(model, device):
     lr = args.lr
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                                             weight_decay=args.weight_decay)
+    # optimizer = optim.RMSprop(net.parameters(), lr=args.lr)
 
     # loss counters
     print("----------------------------------------------------------")
@@ -155,10 +157,10 @@ def train(model, device):
                 images = torch.nn.functional.interpolate(images, size=input_size, mode='bilinear', align_corners=True)
 
             targets = [label.tolist() for label in targets]
-            if args.version == 'yolo_v2':
+            if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
                 targets = tools.gt_creator(input_size, yolo_net.stride, args.num_classes, targets)
-            elif args.version == 'yolo_v3':
-                targets = tools.multi_gt_creator(yolo_net, input_size, targets)
+            elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
+                targets = tools.multi_gt_creator(input_size, yolo_net.stride, args.num_classes, targets)
 
             targets = torch.tensor(targets).float().to(device)
 
@@ -174,11 +176,6 @@ def train(model, device):
                                                         noobj=args.noobj)
             # print(obj_loss.item(), class_loss.item(), box_loss.item())
             total_loss = obj_w * obj_loss + cla_w * class_loss + box_w * box_loss
-            
-            if not torch.isfinite(total_loss):
-                print('WARNING: non-finite loss, ending training ')
-                exit(1)
-                
             # viz loss
             writer.add_scalar('object loss', obj_loss.item(), iteration)
             writer.add_scalar('class loss', class_loss.item(), iteration)
@@ -190,7 +187,7 @@ def train(model, device):
 
             if iteration % 10 == 0:
                 print('timer: %.4f sec.' % (t1 - t0))
-                print(obj_loss.item(), class_loss.item(), box_loss.item())
+                # print(obj_loss.item(), class_loss.item(), box_loss.item())
                 print('Epoch[%d / %d]' % (epoch+1, cfg['max_epoch']) + ' || iter ' + repr(iteration) + \
                         ' || Loss: %.4f ||' % (total_loss.item()) + ' || lr: %.8f ||' % (lr) + ' || input size: %d ||' % input_size[0], end=' ')
 
@@ -236,5 +233,22 @@ if __name__ == '__main__':
         yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v3 on the VOC0712 dataset ......')
 
+    elif args.version == 'tiny_yolo_v2':
+        from models.tiny_yolo_v2 import myYOLOv2
+        total_anchor_size = tools.get_total_anchor_size()
     
+        yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train tiny-yolo-v2 on the VOC0712 dataset ......')
+    
+    elif args.version == 'tiny_yolo_v3':
+        from models.tiny_yolo_v3 import myYOLOv3
+        total_anchor_size = tools.get_total_anchor_size(multi_scale=True)
+    
+        yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        
+        print('Let us train tiny-yolo-v3 on the VOC0712 dataset ......')
+    if args.fine_tune == 1:
+        print('Let us fine tune the model trained on MSCOCO .....')
+        yolo_net.load_state_dict(torch.load('weights_yolo_v2/coco/yolo_v2_250.pth'), strict=False)
+
     train(yolo_net, device)

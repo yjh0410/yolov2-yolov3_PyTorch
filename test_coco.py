@@ -119,10 +119,19 @@ def test():
     if args.version == 'yolo_v2':
         net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
         print('Let us test yolo-v2 on the MSCOCO dataset ......')
+    
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
         net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
 
+    elif args.version == 'tiny_yolo_v2':
+        from models.tiny_yolo_v2 import myYOLOv2    
+        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+   
+    elif args.version == 'tiny_yolo_v3':
+        from models.tiny_yolo_v3 import myYOLOv3
+    
+        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
 
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
     net.to(device).eval()
