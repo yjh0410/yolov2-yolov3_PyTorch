@@ -158,6 +158,56 @@ class DarkNet_53(nn.Module):
 
         return C_3, C_4, C_5
 
+class DarkNet_Tiny(nn.Module):
+    def __init__(self, num_classes=1000):
+        
+        super(DarkNet_Tiny, self).__init__()
+        # backbone network : DarkNet-Tiny
+        # output : stride = 2, c = 32
+        self.conv_1 = nn.Sequential(
+            Conv_BN_LeakyReLU(3, 32, 3, 1),
+            Conv_BN_LeakyReLU(32, 32, 3, padding=1, stride=2)
+        )
+
+        # output : stride = 4, c = 64
+        self.conv_2 = nn.Sequential(
+            Conv_BN_LeakyReLU(32, 64, 3, 1),
+            Conv_BN_LeakyReLU(64, 64, 3, padding=1, stride=2)
+        )
+
+        # output : stride = 8, c = 128
+        self.conv_3 = nn.Sequential(
+            Conv_BN_LeakyReLU(64, 128, 3, 1),
+            Conv_BN_LeakyReLU(128, 128, 3, padding=1, stride=2),
+        )
+
+        # output : stride = 16, c = 256
+        self.conv_4 = nn.Sequential(
+            Conv_BN_LeakyReLU(128, 256, 3, 1),
+            Conv_BN_LeakyReLU(256, 256, 3, padding=1, stride=2),
+        )
+
+        # output : stride = 32, c = 512
+        self.conv_5 = nn.Sequential(
+            Conv_BN_LeakyReLU(256, 512, 3, 1),
+            Conv_BN_LeakyReLU(512, 512, 3, padding=1, stride=2),
+        )
+
+        # self.conv_6 = nn.Conv2d(512, 1000, 1)
+        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+
+    def forward(self, x):
+        x = self.conv_1(x)
+        x = self.conv_2(x)
+        C_3 = self.conv_3(x)
+        C_4 = self.conv_4(C_3)
+        C_5 = self.conv_5(C_4)
+        # x = self.conv_6(x)
+
+        # x = self.avgpool(x)
+        # x = x.view(x.size(0), -1)
+        return C_3, C_4, C_5
+
 def darknet19(pretrained=False, hr=False, **kwargs):
     """Constructs a darknet-19 model.
 
@@ -193,3 +243,22 @@ def darknet53(pretrained=False, hr=False, **kwargs):
             print('Loading the darknet53 ...')
             model.load_state_dict(torch.load(path_to_dir + '/weights/darknet53_75.42.pth', map_location='cuda'), strict=False)
     return model
+
+def darknet_tiny(pretrained=False, hr=False, **kwargs):
+    """Constructs a darknet-tiny model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = DarkNet_Tiny()
+    if pretrained:
+        print('Loading the pretrained model ...')
+        path_to_dir = os.path.dirname(os.path.abspath(__file__))
+        if hr:
+            print('Loading the hi-res darknet_tiny-448 ...')
+            model.load_state_dict(torch.load(path_to_dir + '/weights/darknet_tiny_hr_61.85.pth', map_location='cuda'), strict=False)
+        else:
+            print('Loading the darknet_tiny ...')
+            model.load_state_dict(torch.load(path_to_dir + '/weights/darknet_tiny_63.50_85.06.pth', map_location='cuda'), strict=False)
+    return model
+
