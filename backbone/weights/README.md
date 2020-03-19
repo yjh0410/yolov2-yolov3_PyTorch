@@ -1,15 +1,13 @@
-# pytorch-yolo-v2
-Sorry, the pretrained model darknet19 and darknet53 are too big to upload.
+# darknet19, darknet53 and darknet-tiny
+darknet-tiny is designed by myself. It is a very simple and lightweight backbone.
 
-I will put it on googledrive. Just hold on.
+For researchers in China, you can download them from BaiduYunDisk:
 
-But for researcher in China, you can download it from BaiduYunDisk:
+link：https://pan.baidu.com/s/1Rm87Fcj1RXZFmeTUrDWANA 
 
-link：https://pan.baidu.com/s/1XnhTJqI_A6UZHXbyhyDYFw 
-
-password：52p0
+password：qgzn
 
 
-Also, you can download it from Google Drive:
+Also, you can download them (darknet19 and darknet53) from Google Drive:
 
 link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
