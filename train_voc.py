@@ -158,7 +158,7 @@ def train(model, device):
 
             targets = [label.tolist() for label in targets]
             if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
-                targets = tools.gt_creator(input_size, yolo_net.stride, args.num_classes, targets)
+                targets = tools.gt_creator(input_size, yolo_net.stride, targets)
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
                 targets =  tools.multi_gt_creator(model, input_size, targets)
 

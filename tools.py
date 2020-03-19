@@ -231,12 +231,11 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
 
         return result 
 
-def gt_creator(input_size, stride, num_classes, label_lists=[], name='VOC'):
+def gt_creator(input_size, stride, label_lists=[], name='VOC'):
     """
     Input:
         input_size : list -> the size of image in the training stage.
         stride : int or list -> the downSample of the CNN, such as 32, 64 and so on.
-        num_classes : int -> the number of class labels.
         label_list : list -> [[[xmin, ymin, xmax, ymax, cls_ind], ... ], [[xmin, ymin, xmax, ymax, cls_ind], ... ]],  
                         and len(label_list) = batch_size;
                             len(label_list[i]) = the number of class instance in a image;
