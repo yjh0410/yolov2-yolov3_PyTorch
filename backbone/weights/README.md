@@ -8,6 +8,6 @@ link：https://pan.baidu.com/s/1Rm87Fcj1RXZFmeTUrDWANA
 password：qgzn
 
 
-Also, you can download them (darknet19 and darknet53) from Google Drive:
+Also, you can download them from Google Drive:
 
 link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
