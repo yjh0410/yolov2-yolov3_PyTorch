@@ -9,7 +9,7 @@ import os
 import numpy as np
 
 class myYOLOv3(nn.Module):
-    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.50, anchor_size=None, hr=False):
+    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.01, nms_thresh=0.50, anchor_size=None, hr=False):
         super(myYOLOv3, self).__init__()
         self.device = device
         self.num_classes = num_classes
