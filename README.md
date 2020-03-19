@@ -1,3 +1,9 @@
+# tiny-yolo-v2 and tiny-yolo-v3
+Good news again !!!
+
+In this update, I add tiny-yolo-v2 and tiny-yolo-v3 that are both designed by myself. My tiny-yolo-v2 gets 61.6 mAP and 117 FPS on a GTX-1660ti GPU and tiny-yolo-v3 gets 71.3 mAP and 62.5 FPS on a GTX-1660ti GPU. There is nothing new but just tiny.
+So, have fun !
+
 # pytorch-yolo-v3
 Good news !!!
 
