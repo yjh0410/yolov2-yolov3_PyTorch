@@ -265,7 +265,7 @@ class myYOLOv3(nn.Module):
 
         # test
         if not self.trainable:
-            xywh_pred = xywh_pred.view(B, HW*self.anchor_number, 4).view(B, HW, self.anchor_number, 4)
+            xywh_pred = xywh_pred.view(B, HW, self.anchor_number, 4)
             with torch.no_grad():
                 # batch size = 1                
                 all_obj = torch.sigmoid(obj_pred)[0]           # 0 is because that these is only 1 batch.
