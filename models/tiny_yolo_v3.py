@@ -17,11 +17,11 @@ class YOLOv3tiny(nn.Module):
         self.nms_thresh = nms_thresh
         self.stride = [8, 16, 32]
         self.anchor_size = torch.tensor(anchor_size).view(3, len(anchor_size) // 3, 2)
-        self.all_anchors_wh = self.anchor_size.view(3, 1, 1, 1, 3, 2).to(device)
         self.anchor_number = self.anchor_size.size(1)
         self.anchor_size[0, :] *= 4
         self.anchor_size[1, :] *= 2
         self.anchor_size[2, :] *= 1
+        self.all_anchors_wh = self.anchor_size.view(3, 1, 1, 1, 3, 2).to(device)
         self.input_size = input_size
 
         w, h = self.input_size
