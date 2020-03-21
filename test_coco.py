@@ -10,7 +10,6 @@ import numpy as np
 import cv2
 import time
 from decimal import *
-from models.yolo_v2 import myYOLOv2
 
 
 
@@ -117,6 +116,7 @@ def test():
 
 
     if args.version == 'yolo_v2':
+        from models.yolo_v2 import myYOLOv2
         net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
         print('Let us test yolo-v2 on the MSCOCO dataset ......')
     

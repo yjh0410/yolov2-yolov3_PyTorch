@@ -18,7 +18,6 @@ import torch
 from torch.autograd import Variable
 import torch.optim as optim
 
-from models.yolo_v2 import myYOLOv2
 
 parser = argparse.ArgumentParser(description='YOLO-v1 Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
