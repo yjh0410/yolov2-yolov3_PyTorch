@@ -1,17 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
-from torchvision import models
-from utils import Conv2d, reorg_layer
+from utils import Conv2d
 from backbone import *
-import os
 import numpy as np
 
 class myYOLOv3(nn.Module):
     def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.50, anchor_size=None, hr=False):
         super(myYOLOv3, self).__init__()
         self.device = device
+        self.input_size = input_size
         self.num_classes = num_classes
         self.trainable = trainable
         self.conf_thresh = conf_thresh
@@ -19,16 +17,15 @@ class myYOLOv3(nn.Module):
         self.stride = [8, 16, 32]
         self.anchor_size = torch.tensor(anchor_size).view(3, len(anchor_size) // 3, 2)
         self.anchor_number = self.anchor_size.size(1)
-        if not trainable:
-            self.anchor_size[0, :] *= 4
-            self.anchor_size[1, :] *= 2
-            self.anchor_size[2, :] *= 1
-            self.input_size = input_size
-            self.grid_cell, self.all_anchor_wh, self.stride_tensor = self.init_grid()
-            self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
-            self.scale_torch = torch.tensor(self.scale.copy()).float()
+        self.anchor_size[0, :] *= 4
+        self.anchor_size[1, :] *= 2
+        self.anchor_size[2, :] *= 1
 
-        # backbone darknet-53
+        self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid()
+        self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
+        self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
+
+        # backbone darknet-19
         self.backbone = darknet53(pretrained=trainable, hr=hr)
         
         # s = 32
@@ -66,28 +63,33 @@ class myYOLOv3(nn.Module):
         self.extra_conv_1 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
         self.pred_1 = nn.Conv2d(256, self.anchor_number*(1 + 4 + self.num_classes), 1)
     
-    def init_grid(self):
-        total = sum([(self.input_size[1]//s) * (self.input_size[0]//s) for s in self.stride])
-        # [1, H*W, 1, 2]
-        grid_cell = torch.zeros(1, total, self.anchor_number, 2).to(self.device)
-        # [1, 1, anchor_n, 2]
-        all_anchor_wh = torch.zeros(1, total, self.anchor_number, 2).to(self.device)
+    def create_grid(self):
+        total_grid_xy = []
+        total_stride = []
+        total_anchor_wh = []
+        w, h = self.input_size[1], self.input_size[0]
+        for ind, s in enumerate(self.stride):
+            # generate grid cells
+            ws, hs = w // s, h // s
+            grid_y, grid_x = torch.meshgrid([torch.arange(hs), torch.arange(ws)])
+            grid_xy = torch.stack([grid_x, grid_y], dim=-1).float()
+            grid_xy = grid_xy.view(1, hs*ws, 1, 2)
 
-        stride_tensor = torch.zeros(1, total, self.anchor_number).to(self.device).float()
+            # generate stride tensor
+            stride_tensor = torch.ones([1, hs*ws*self.anchor_number]) * s
 
-        start_index = 0
-        for i, s in enumerate(self.stride):
-            ws = self.input_size[1] // s
-            hs = self.input_size[0] // s
-            for ys in range(hs):
-                for xs in range(ws):
-                    index = ys * ws + xs + start_index
-                    grid_cell[:, index, :, :] = torch.tensor([xs, ys]).float()
-                    stride_tensor[:, index, :] = torch.ones(self.anchor_number) * s
-            all_anchor_wh[:, start_index:index] = self.anchor_size[i]
-            start_index += ws * hs
+            # generate anchor_wh tensor
+            anchor_wh = self.anchor_size[ind].repeat(hs*ws, 1, 1)
 
-        return grid_cell, all_anchor_wh, stride_tensor.view(1, -1)
+            total_grid_xy.append(grid_xy)
+            total_stride.append(stride_tensor)
+            total_anchor_wh.append(anchor_wh)
+
+        total_grid_xy = torch.cat(total_grid_xy, dim=1).to(self.device)
+        total_stride = torch.cat(total_stride, dim=1).to(self.device)
+        total_anchor_wh = torch.cat(total_anchor_wh, dim=0).to(self.device).unsqueeze(0)
+
+        return total_grid_xy, total_stride, total_anchor_wh
         
     def decode_boxes(self, xywh_pred):
         """
@@ -100,31 +102,18 @@ class myYOLOv3(nn.Module):
         B, HW, ab_n, _ = xywh_pred.size()
         c_xy_pred = torch.sigmoid(xywh_pred[:, :, :, :2]) + self.grid_cell
         # b_w = anchor_w * exp(tw),     b_h = anchor_h * exp(th)
-        b_wh_pred = torch.exp(xywh_pred[:, :, :, 2:]) * self.all_anchor_wh
+        b_wh_pred = torch.exp(xywh_pred[:, :, :, 2:]) * self.all_anchors_wh
         # [B, H*W, anchor_n, 4] -> [B, H*W*anchor_n, 4]
         bbox_pred = torch.cat([c_xy_pred, b_wh_pred], -1).view(B, HW*ab_n, 4)
 
         # [center_x, center_y, w, h] -> [xmin, ymin, xmax, ymax]
-        output = torch.zeros(bbox_pred.size())
+        output = torch.zeros_like(bbox_pred)
         output[:, :, 0] = (bbox_pred[:, :, 0] - bbox_pred[:, :, 2] / 2) * self.stride_tensor
         output[:, :, 1] = (bbox_pred[:, :, 1] - bbox_pred[:, :, 3] / 2) * self.stride_tensor
         output[:, :, 2] = (bbox_pred[:, :, 0] + bbox_pred[:, :, 2] / 2) * self.stride_tensor
         output[:, :, 3] = (bbox_pred[:, :, 1] + bbox_pred[:, :, 3] / 2) * self.stride_tensor
         
         return output
-
-    def clip_boxes(self, boxes, im_shape):
-        """
-        Clip boxes to image boundaries.
-        """
-        if boxes.shape[0] == 0:
-            return boxes
-
-        # 0 <= x1 and x2 < im_shape[1]
-        boxes[:, [0, 2]] = np.clip(boxes[:, [0, 2]], 0, im_shape[1]-1)
-        # 0 <= y1 and y2 < im_shape[0]
-        boxes[:, [1, 3]] = np.clip(boxes[:, [1, 3]], 0, im_shape[0]-1)
-        return boxes
 
     def nms(self, dets, scores):
         """"Pure Python NMS baseline."""
@@ -265,19 +254,15 @@ class myYOLOv3(nn.Module):
             with torch.no_grad():
                 # batch size = 1                
                 all_obj = torch.sigmoid(obj_pred)[0]           # 0 is because that these is only 1 batch.
-                all_bbox = self.decode_boxes(xywh_pred)[0] / self.scale_torch
-                all_class = (torch.softmax(cls_pred[0, :, :], 1) * all_obj)
+                all_bbox = torch.clamp(self.decode_boxes(xywh_pred)[0] / self.scale_torch, 0., 1.)
+                all_class = (torch.softmax(cls_pred[0, :, :], dim=1) * all_obj)
                 # separate box pred and class conf
                 all_obj = all_obj.to('cpu').numpy()
                 all_class = all_class.to('cpu').numpy()
                 all_bbox = all_bbox.to('cpu').numpy()
 
                 bboxes, scores, cls_inds = self.postprocess(all_bbox, all_class)
-                # clip the boxes
-                bboxes *= self.scale
-                bboxes = self.clip_boxes(bboxes, self.input_size) / self.scale
 
-    
                 # print(len(all_boxes))
                 return bboxes, scores, cls_inds
 

@@ -1,18 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
-from torchvision import models
 from utils import Conv2d, reorg_layer
 from backbone import *
-import os
 import numpy as np
 import tools
 
-class myYOLOv2(nn.Module):
+class YOLOv2tiny(nn.Module):
     def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.01, nms_thresh=0.5, anchor_size=None, hr=False):
-        super(myYOLOv2, self).__init__()
+        super(YOLOv2tiny, self).__init__()
         self.device = device
+        self.input_size = input_size
         self.num_classes = num_classes
         self.trainable = trainable
         self.conf_thresh = conf_thresh
@@ -20,11 +18,9 @@ class myYOLOv2(nn.Module):
         self.anchor_size = torch.tensor(anchor_size)
         self.anchor_number = len(anchor_size)
         self.stride = 32
-        # if not trainable:
-        self.grid_cell, self.all_anchor_wh = self.set_init(input_size)
-        self.input_size = input_size
+        self.grid_cell, self.all_anchor_wh = self.create_grid()
         self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
-        self.scale_torch = torch.tensor(self.scale.copy()).float()
+        self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
         # backbone darknet-19
         self.backbone = darknet_tiny(pretrained=trainable, hr=hr)
@@ -43,23 +39,19 @@ class myYOLOv2(nn.Module):
         # prediction layer
         self.pred_ = nn.Conv2d(512, self.anchor_number*(1 + 4 + self.num_classes), 1)
 
-    def set_init(self, input_size):
-        s = self.stride
-        ws = input_size[1] // s
-        hs = input_size[0] // s
-        # [1, H*W, 1, 2]
-        grid_cell = torch.zeros(1, hs*ws, self.anchor_number, 2).to(self.device)
-        # [1, 1, anchor_n, 2]
-        all_anchor_wh = torch.zeros(1, hs*ws, self.anchor_number, 2).to(self.device)
-        
-        for ys in range(hs):
-            for xs in range(ws):
-                index = ys * ws + xs
-                grid_cell[:, index, :, :] = torch.tensor([xs, ys]).float()
-        all_anchor_wh[:, :] = self.anchor_size
+    def create_grid(self):
+        w, h = self.input_size[1], self.input_size[0]
+        # generate grid cells
+        ws, hs = w // self.stride, h // self.stride
+        grid_y, grid_x = torch.meshgrid([torch.arange(hs), torch.arange(ws)])
+        grid_xy = torch.stack([grid_x, grid_y], dim=-1).float()
+        grid_xy = grid_xy.view(1, hs*ws, 1, 2)
 
-        return grid_cell, all_anchor_wh
-        
+        # generate anchor_wh tensor
+        anchor_wh = self.anchor_size.repeat(hs*ws, 1, 1).unsqueeze(0)
+
+        return grid_xy, anchor_wh
+                
     def decode_boxes(self, xywh_pred):
         """
             Input:
@@ -83,23 +75,6 @@ class myYOLOv2(nn.Module):
         output[:, :, 3] = (bbox_pred[:, :, 1] + bbox_pred[:, :, 3] / 2) * self.stride
         
         return output
-
-    def clip_boxes(self, boxes, im_shape):
-        """
-        Clip boxes to image boundaries.
-        """
-        if boxes.shape[0] == 0:
-            return boxes
-
-        # x1 >= 0
-        boxes[:, 0::4] = np.maximum(np.minimum(boxes[:, 0::4], im_shape[1] - 1), 0)
-        # y1 >= 0
-        boxes[:, 1::4] = np.maximum(np.minimum(boxes[:, 1::4], im_shape[0] - 1), 0)
-        # x2 < im_shape[1]
-        boxes[:, 2::4] = np.maximum(np.minimum(boxes[:, 2::4], im_shape[1] - 1), 0)
-        # y2 < im_shape[0]
-        boxes[:, 3::4] = np.maximum(np.minimum(boxes[:, 3::4], im_shape[0] - 1), 0)
-        return boxes
 
     def nms(self, dets, scores):
         """"Pure Python NMS baseline."""
@@ -189,7 +164,7 @@ class myYOLOv2(nn.Module):
 
         B, abC, H, W = prediction.size()
 
-        # [B, anchor_n * C, H, W] -> [B, H, W, anchor_n * C] -> [B, H*W, anchor_n*C]
+        # [B, anchor_n * C, N, M] -> [B, N, M, anchor_n * C] -> [B, N*M, anchor_n*C]
         prediction = prediction.permute(0, 2, 3, 1).contiguous().view(B, H*W, abC)
 
         # Divide prediction to obj_pred, xywh_pred and cls_pred   
@@ -202,11 +177,11 @@ class myYOLOv2(nn.Module):
         
         # test
         if not self.trainable:
-            xywh_pred = xywh_pred.view(B, H*W, self.anchor_number, 4)
+            xywh_pred = xywh_pred.view(B, H*W*self.anchor_number, 4).view(B, H*W, self.anchor_number, 4)
             with torch.no_grad():
                 # batch size = 1                
                 all_obj = torch.sigmoid(obj_pred)[0]           # 0 is because that these is only 1 batch.
-                all_bbox = self.decode_boxes(xywh_pred)[0] / self.scale_torch
+                all_bbox = torch.clamp(self.decode_boxes(xywh_pred)[0] / self.scale_torch, 0., 1.)
                 all_class = (torch.softmax(cls_pred[0, :, :], 1) * all_obj)
                 # separate box pred and class conf
                 all_obj = all_obj.to('cpu').numpy()
@@ -214,12 +189,7 @@ class myYOLOv2(nn.Module):
                 all_bbox = all_bbox.to('cpu').numpy()
 
                 bboxes, scores, cls_inds = self.postprocess(all_bbox, all_class)
-                # clip the boxes
-                bboxes *= self.scale
-                bboxes = self.clip_boxes(bboxes, self.input_size) / self.scale
 
-    
-                # print(len(all_boxes))
                 return bboxes, scores, cls_inds
 
         xywh_pred = xywh_pred.view(B, H*W*self.anchor_number, 4)
