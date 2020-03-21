@@ -19,7 +19,7 @@ import argparse
 import numpy as np
 import pickle
 import cv2
-from models.yolo_v2 import myYOLOv2
+from utils import get_device
 
 if sys.version_info[0] == 2:
     import xml.etree.cElementTree as ET
@@ -42,8 +42,8 @@ parser.add_argument('--trained_model', type=str,
                     help='Trained state_dict file path to open')
 parser.add_argument('--save_folder', default='eval/', type=str,
                     help='File path to save results')
-parser.add_argument('--confidence_threshold', default=0.01, type=float,
-                    help='Detection confidence threshold')
+parser.add_argument('--gpu_ind', default=0, type=int, 
+                    help='To choose your gpu.')
 parser.add_argument('--top_k', default=200, type=int,
                     help='Further restrict the number of predictions to parse')
 parser.add_argument('--cuda', default=True, type=str2bool,
@@ -54,10 +54,6 @@ parser.add_argument('--cleanup', default=True, type=str2bool,
                     help='Cleanup and remove results files following eval')
 
 args = parser.parse_args()
-if args.cuda:
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-else:
-    device = torch.device("cpu")
 
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
@@ -347,7 +343,7 @@ def voc_eval(detpath,
     return rec, prec, ap
 
 
-def test_net(save_folder, net, cuda, dataset, transform, top_k, thresh=0.05):
+def test_net(net, dataset, device, transform, top_k):
     num_images = len(dataset)
     # all detections are collected into:
     #    all_boxes[cls][image] = N x 5 array of detections in
@@ -364,8 +360,6 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k, thresh=0.05):
         im, gt, h, w = dataset.pull_item(i)
 
         x = Variable(im.unsqueeze(0)).to(device)
-        if args.cuda:
-            x = x.to(device)
         _t['im_detect'].tic()
         detections = net(x)
         detect_time = _t['im_detect'].toc(average=False)
@@ -402,24 +396,25 @@ def evaluate_detections(box_list, output_dir, dataset):
 
 if __name__ == '__main__':
     num_classes = len(labelmap)
+    device = get_device(args.gpu_ind)
 
     cfg = config.voc_ab
     if args.version == 'yolo_v2':
+        from models.yolo_v2 import myYOLOv2
         net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
     
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
         net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
-   
+    
     elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import myYOLOv2    
-        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        from models.tiny_yolo_v2 import YOLOv2tiny    
+        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
         print('Let us eval tiny-yolo-v2 on the VOC0712 dataset ......')
 
     elif args.version == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import myYOLOv3
-    
-        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        from models.tiny_yolo_v3 import YOLOv3tiny
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
         print('Let us eval tiny-yolo-v3 on the VOC0712 dataset ......')
 
     # load net
@@ -430,10 +425,8 @@ if __name__ == '__main__':
     dataset = VOCDetection(args.voc_root, [('2007', set_type)],
                            BaseTransform(net.input_size, dataset_mean),
                            VOCAnnotationTransform())
-    if args.cuda:
-        net = net.to(device)
-        cudnn.benchmark = True
+    net = net.to(device)
     # evaluation
-    test_net(args.save_folder, net, args.cuda, dataset,
+    test_net(net, dataset, device,
              BaseTransform(net.input_size, dataset_mean), args.top_k,
-             thresh=args.confidence_threshold)
+             )

@@ -27,7 +27,7 @@ parser.add_argument('-ms', '--multi_scale', type=int, default=0,
                     help='1: use multi-scale trick; 0: else not')                  
 parser.add_argument('-fl', '--use_focal', type=int, default=0,
                     help='0: use focal loss; 1: else not;')
-parser.add_argument('--batch_size', default=64, type=int, 
+parser.add_argument('--batch_size', default=32, type=int, 
                     help='Batch size for training')
 parser.add_argument('--lr', default=1e-3, type=float, 
                     help='initial learning rate')
@@ -90,7 +90,7 @@ def train(model, device):
 
     from torch.utils.tensorboard import SummaryWriter
     c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-    log_path = 'log/yolo_v2/voc2007/' + c_time
+    log_path = 'log/yolo_v2/voc2007/'# + c_time
     if not os.path.exists(log_path):
         os.mkdir(log_path)
 
@@ -158,9 +158,9 @@ def train(model, device):
 
             targets = [label.tolist() for label in targets]
             if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
-                targets = tools.gt_creator(input_size, yolo_net.stride, targets)
+                targets = tools.gt_creator(input_size, yolo_net.stride, args.num_classes, targets)
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
-                targets =  tools.multi_gt_creator(model, input_size, targets)
+                targets = tools.multi_gt_creator(input_size, yolo_net.stride, args.num_classes, targets)
 
             targets = torch.tensor(targets).float().to(device)
 
@@ -234,17 +234,17 @@ if __name__ == '__main__':
         print('Let us train yolo-v3 on the VOC0712 dataset ......')
 
     elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import myYOLOv2
+        from models.tiny_yolo_v2 import YOLOv2tiny
         total_anchor_size = tools.get_total_anchor_size()
     
-        yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v2 on the VOC0712 dataset ......')
     
     elif args.version == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import myYOLOv3
+        from models.tiny_yolo_v3 import YOLOv3tiny
         total_anchor_size = tools.get_total_anchor_size(multi_scale=True)
     
-        yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         
         print('Let us train tiny-yolo-v3 on the VOC0712 dataset ......')
     if args.fine_tune == 1:

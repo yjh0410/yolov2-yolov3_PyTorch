@@ -266,17 +266,17 @@ if __name__ == '__main__':
         print('Let us train yolo-v3 on the MSCOCO dataset ......')
 
     elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import myYOLOv2
+        from models.tiny_yolo_v2 import YOLOv2tiny
         total_anchor_size = tools.get_total_anchor_size()
     
-        yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v2 on the MSCOCO dataset ......')
 
     elif args.version == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import myYOLOv3
+        from models.tiny_yolo_v3 import YOLOv3tiny
         total_anchor_size = tools.get_total_anchor_size(multi_scale=True)
     
-        yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v3 on the MSCOCO dataset ......')
 
     train(yolo_net, device)

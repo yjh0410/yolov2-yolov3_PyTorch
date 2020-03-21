@@ -125,13 +125,13 @@ def test():
         net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
 
     elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import myYOLOv2    
-        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        from models.tiny_yolo_v2 import YOLOv2tiny    
+        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
    
     elif args.version == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import myYOLOv3
+        from models.tiny_yolo_v3 import YOLOv3tiny
     
-        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
 
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
     net.to(device).eval()

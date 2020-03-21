@@ -12,8 +12,6 @@ import cv2
 import tools
 import time
 from decimal import *
-from models.yolo_v2 import myYOLOv2
-
 
 
 parser = argparse.ArgumentParser(description='YOLO-v2 Detection')
@@ -25,8 +23,8 @@ parser.add_argument('--trained_model', default='weights_yolo_v2/yolo_v2_72.2.pth
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
-parser.add_argument('--cuda', default=True, type=bool,
-                    help='Use cuda to test model') 
+parser.add_argument('--gpu_ind', default=0, type=int, 
+                    help='To choose your gpu.')
 parser.add_argument('--voc_root', default=VOC_ROOT, 
                     help='Location of VOC root directory')
 parser.add_argument('-f', default=None, type=str, 
@@ -74,7 +72,7 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
 
 def test():
     # get device
-    device = get_device(1)
+    device = get_device(args.gpu_ind)
 
     # load net
     num_classes = len(VOC_CLASSES)
@@ -83,6 +81,7 @@ def test():
 
     cfg = config.voc_ab
     if args.version == 'yolo_v2':
+        from models.yolo_v2 import myYOLOv2
         net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
         print('Let us test yolo-v2 on the VOC0712 dataset ......')
 
@@ -91,14 +90,14 @@ def test():
         net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
     
     elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import myYOLOv2    
-        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        from models.tiny_yolo_v2 import YOLOv2tiny    
+        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
         print('Let us test tiny-yolo-v2 on the VOC0712 dataset ......')
    
     elif args.version == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import myYOLOv3
+        from models.tiny_yolo_v3 import YOLOv3tiny
     
-        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
         print('Let us test tiny-yolo-v3 on the VOC0712 dataset ......')
 
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
