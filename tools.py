@@ -43,7 +43,6 @@ class MSELoss(nn.Module):
         else:
             return pos_loss, neg_loss
 
-
 class BCE_focal_loss(nn.Module):
     def __init__(self,  weight=None, gamma=2, reduction='mean'):
         super(BCE_focal_loss, self).__init__()
@@ -180,11 +179,10 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
     box_w = xmax - xmin
     box_h = ymax - ymin
 
-    # There are some dirty datas in MSCOCO
     if box_w < 1e-28 or box_h < 1e-28:
-        # print('Find a dirty data !!!')
-        return False
-        
+        # print('A dirty data !!!')
+        return False    
+
     # map the center, width and height to the feature map size
     c_x_s = c_x / s
     c_y_s = c_y / s
@@ -218,9 +216,9 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
         return result
     else:
         # We assign any anchor box whose IoU score is higher than ignore thresh.
-        iou_ = iou * iou_mask
-        for index, iou_score in enumerate(iou_):
-            if iou_mask[index]:
+        # iou_ = iou * iou_mask
+        for index, iou_m in enumerate(iou_mask):
+            if iou_m:
                 p_w, p_h = all_anchor_size[index]
                 tx = c_x_s - grid_x
                 ty = c_y_s - grid_y
@@ -278,17 +276,16 @@ def gt_creator(input_size, stride, label_lists=[], name='VOC'):
 
     return gt_tensor
 
-def multi_gt_creator(model, input_size, label_lists=[]):
+def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
     """creator multi scales gt"""
     # prepare the all empty gt datas
     batch_size = len(label_lists)
     h, w = input_size
-    strides = model.stride
     num_scale = len(strides)
     gt_tensor = []
 
     # generate gt datas
-    all_anchor_size = model.anchor_size.view(-1, 2)
+    all_anchor_size = get_total_anchor_size(multi_scale=True, name=name)
     anchor_number = len(all_anchor_size) // num_scale
     for s in strides:
         gt_tensor.append(np.zeros([batch_size, h//s, w//s, anchor_number, 1+1+4+1]))
@@ -308,30 +305,29 @@ def multi_gt_creator(model, input_size, label_lists=[]):
             box_w = xmax - xmin
             box_h = ymax - ymin
 
-            # There are some dirty datas in MSCOCO
-            if box_w < 1e-14 or box_h < 1e-14:
-                print('Find a dirty data !!!')
-                return False
+            if box_w < 1e-28 or box_h < 1e-28:
+                # print('A dirty data !!!')
+                continue    
 
-            box_ws = box_w / strides[-1]
-            box_hs = box_h / strides[-1]
-            # generate anchor boxes
-            anchor_boxes = set_anchors(all_anchor_size)
-            gt_box = np.array([[0, 0, box_ws, box_hs]])
             # compute the IoU
+            anchor_boxes = set_anchors(all_anchor_size)
+            gt_box = np.array([[0, 0, box_w, box_h]])
             iou = compute_iou(anchor_boxes, gt_box)
+
             # We only consider those anchor boxes whose IoU is more than ignore thresh,
             iou_mask = (iou > ignore_thresh).astype(np.int) # bool -> int
 
             if iou_mask.sum() == 0:
                 # We assign the anchor box with highest IoU score.
                 index = np.argmax(iou)
-                s_indx, ab_ind = index // num_scale, index % num_scale
+                # s_indx, ab_ind = index // num_scale, index % num_scale
+                s_indx = index // anchor_number
+                ab_ind = index - s_indx * anchor_number
                 # get the corresponding stride
                 s = strides[s_indx]
                 # get the corresponding anchor box
-                p_w, p_h = all_anchor_size[index]
-                # compute the grid cell location
+                p_w, p_h = anchor_boxes[index, 2], anchor_boxes[index, 3]
+                # compute the gride cell location
                 c_x_s = c_x / s
                 c_y_s = c_y / s
                 grid_x = int(c_x_s)
@@ -339,8 +335,8 @@ def multi_gt_creator(model, input_size, label_lists=[]):
                 # compute gt labels
                 tx = c_x_s - grid_x
                 ty = c_y_s - grid_y
-                tw = np.log(box_ws / p_w)
-                th = np.log(box_hs / p_h)
+                tw = np.log(box_w / p_w)
+                th = np.log(box_h / p_h)
                 weight = 2.0 - (box_w / w) * (box_h / h)
 
                 if grid_y < gt_tensor[s_indx].shape[1] and grid_x < gt_tensor[s_indx].shape[2]:
@@ -352,13 +348,15 @@ def multi_gt_creator(model, input_size, label_lists=[]):
                 # We assign any anchor box whose IoU score is higher than ignore thresh.
                 iou_ = iou * iou_mask
                 for index, iou_score in enumerate(iou_):
-                    if iou_mask[index]:
-                        s_indx, ab_ind = index // num_scale, index % num_scale
+                    if iou_score > ignore_thresh:
+                        # s_indx, ab_ind = index // num_scale, index % num_scale
+                        s_indx = index // anchor_number
+                        ab_ind = index - s_indx * anchor_number
                         # get the corresponding stride
                         s = strides[s_indx]
                         # get the corresponding anchor box
-                        p_w, p_h = all_anchor_size[index]
-                        # compute the grid cell location
+                        p_w, p_h = anchor_boxes[index, 2], anchor_boxes[index, 3]
+                        # compute the gride cell location
                         c_x_s = c_x / s
                         c_y_s = c_y / s
                         grid_x = int(c_x_s)
@@ -366,8 +364,8 @@ def multi_gt_creator(model, input_size, label_lists=[]):
                         # compute gt labels
                         tx = c_x_s - grid_x
                         ty = c_y_s - grid_y
-                        tw = np.log(box_ws / p_w)
-                        th = np.log(box_hs / p_h)
+                        tw = np.log(box_w / p_w)
+                        th = np.log(box_h / p_h)
                         weight = 2.0 - (box_w / w) * (box_h / h)
 
                         if grid_y < gt_tensor[s_indx].shape[1] and grid_x < gt_tensor[s_indx].shape[2]:
@@ -380,7 +378,7 @@ def multi_gt_creator(model, input_size, label_lists=[]):
     gt_tensor = np.concatenate(gt_tensor, 1)
     return gt_tensor
 
-def loss(pred, label, num_classes, strides=None, input_size=None, use_focal=False, obj=1.0, noobj=0.5):
+def loss(pred, label, num_classes, use_focal=False, obj=5.0, noobj=1.0):
     # define loss functions
     if use_focal:
         obj_loss_function = BCE_focal_loss(reduction='mean')
@@ -393,8 +391,8 @@ def loss(pred, label, num_classes, strides=None, input_size=None, use_focal=Fals
     pred_class = pred[:, :, 1 : 1+num_classes].permute(0, 2, 1)
     pred_box = pred[:, :, 1+num_classes:]
 
-    pred_box_xy = torch.sigmoid(pred_box[:, :, :2])
-    pred_box_wh = pred_box[:, :, 2:]
+    pred_box_txty = torch.sigmoid(pred_box[:, :, :2])
+    pred_box_twth = pred_box[:, :, 2:]
         
 
     gt_obj = label[:, :, 0].float()
@@ -413,14 +411,54 @@ def loss(pred, label, num_classes, strides=None, input_size=None, use_focal=Fals
     class_loss = torch.mean(torch.sum(class_loss_function(pred_class, gt_class) * gt_obj, 1))
     
     # box loss
-    box_loss_xy = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_xy, gt_box[:, :, :2]), 2) * gt_obj, 1))
-    box_loss_wh = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_wh, gt_box[:, :, 2:]), 2) * gt_obj * gt_box_scale_weight, 1))
-    # box_loss_wh_ = (gt_box[:, :, 2:] - pred_box_wh) + 0.5 * torch.exp(2 * (pred_box_wh - gt_box[:, :, 2:])) # y = -x + 1/2 exp(2x)
-    # box_loss_wh = torch.mean(torch.sum(torch.sum(box_loss_wh_, 2) * gt_obj * gt_box_scale_weight, 1))
+    box_loss_txty = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_txty, gt_box[:, :, :2]), 2) * gt_obj, 1))
+    box_loss_twth = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_twth, gt_box[:, :, 2:]), 2) * gt_obj * gt_box_scale_weight, 1))
 
-    box_loss = box_loss_xy + box_loss_wh
+    box_loss = box_loss_txty + box_loss_twth
 
     return obj_loss, class_loss, box_loss
+
+# IoU and its a series of variants
+def IoU(pred, label):
+    """
+        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+
+        Output: IoU  -> [iou_1, iou_2, ...],    size=[B, H*W]
+    """
+
+    return
+
+def GIoU(pred, label):
+    """
+        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+
+        Output: GIoU -> [giou_1, giou_2, ...],    size=[B, H*W]
+    """
+
+    return
+
+def DIoU(pred, label):
+    """
+        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+
+        Output: DIoU -> [diou_1, diou_2, ...],    size=[B, H*W]
+    """
+
+    return
+
+def CIoU(pred, label):
+    """
+        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
+
+        Output: CIoU -> [ciou_1, ciou_2, ...],    size=[B, H*W]
+    """
+
+    return
+
 
 if __name__ == "__main__":
     gt_box = np.array([[0.0, 0.0, 10, 10]])
