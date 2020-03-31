@@ -384,7 +384,6 @@ class PhotometricDistort(object):
             RandomContrast()
         ]
         self.rand_brightness = RandomBrightness()
-        self.rand_light_noise = RandomLightingNoise()
 
     def __call__(self, image, boxes, labels):
         im = image.copy()
@@ -394,7 +393,7 @@ class PhotometricDistort(object):
         else:
             distort = Compose(self.pd[1:])
         im, boxes, labels = distort(im, boxes, labels)
-        return self.rand_light_noise(im, boxes, labels)
+        return im, boxes, labels
 
 
 class SSDAugmentation(object):
