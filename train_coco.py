@@ -177,7 +177,6 @@ def train(net, device):
             writer.add_scalar('val/COCOAP50_95', ap50_95, epoch + 1)
 
         # subdivision loop
-        optimizer.zero_grad()
         for images, targets in batch_iterator:
             iteration += 1
         
@@ -200,6 +199,9 @@ def train(net, device):
 
             t0 = time.time()
             out = model(images.to(device))
+            
+            optimizer.zero_grad()
+
             obj_loss, class_loss, box_loss = tools.loss(out, targets, num_classes=args.num_classes, 
                                                         use_focal=use_focal,
                                                         obj=args.obj,
