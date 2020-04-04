@@ -212,18 +212,21 @@ def cos_lr(optimizer, epoch, max_epoch):
     lr = min_lr + 0.5*(args.lr-min_lr)*(1+math.cos(math.pi*(epoch-20)*1./ (max_epoch-20)))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
     return lr
 
 def adjust_learning_rate(optimizer, gamma, step_index):
     lr = args.lr * (gamma ** (step_index))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
     return lr
 
 def warmup_strategy(optimizer, epoch_size, iteration):
     lr = 1e-6 + (args.lr-1e-6) * iteration / (epoch_size * (args.wp_epoch)) 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+        
     return lr
 
 if __name__ == '__main__':
