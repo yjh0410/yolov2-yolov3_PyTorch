@@ -28,7 +28,7 @@ Before I tell you guys how to use this project, I must say something about diffe
 
 - For data augmentation, I copy the augmentation codes from the https://github.com/amdegroot/ssd.pytorch which is a superb project reproducing the SSD. If anyone is interested in SSD, just clone it to learn !(Don't forget to star it !)
 
-My yolo-v2 got 74.4 mAP with 416 input and 76.8 mAP with 608 input on VOC2007 test, lower than origin yolo-v2 that got 76.8% mAP with the same image size. This is maybe because that there are two tricks that didn't work:
+My yolo-v2 got 75.2 mAP with 416 input and 77.2 mAP with 608 input on VOC2007 test, lower than origin yolo-v2 that got 76.8% mAP with the same image size. This is maybe because that there are two tricks that didn't work:
 
 1. hi-res classifier
 
