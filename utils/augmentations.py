@@ -69,13 +69,17 @@ class ConvertFromInts(object):
         return image.astype(np.float32), boxes, labels
 
 
-class SubtractMeans(object):
-    def __init__(self, mean):
+class Normalize(object):
+    def __init__(self, mean=None, std=None):
         self.mean = np.array(mean, dtype=np.float32)
+        self.std = np.array(std, dtype=np.float32)
 
     def __call__(self, image, boxes=None, labels=None):
         image = image.astype(np.float32)
+        image /= 255.
         image -= self.mean
+        image /= self.std
+
         return image, boxes, labels
 
 
@@ -384,6 +388,7 @@ class PhotometricDistort(object):
             RandomContrast()
         ]
         self.rand_brightness = RandomBrightness()
+        # self.rand_light_noise = RandomLightingNoise()
 
     def __call__(self, image, boxes, labels):
         im = image.copy()
@@ -394,12 +399,14 @@ class PhotometricDistort(object):
             distort = Compose(self.pd[1:])
         im, boxes, labels = distort(im, boxes, labels)
         return im, boxes, labels
+        # return self.rand_light_noise(im, boxes, labels)
 
 
 class SSDAugmentation(object):
-    def __init__(self, size=300, mean=(104, 117, 123)):
+    def __init__(self, size=300, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
         self.mean = mean
         self.size = size
+        self.std = std
         self.augment = Compose([
             ConvertFromInts(),
             ToAbsoluteCoords(),
@@ -409,7 +416,7 @@ class SSDAugmentation(object):
             RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),
-            SubtractMeans(self.mean)
+            Normalize(self.mean, self.std)
         ])
 
     def __call__(self, img, boxes, labels):
