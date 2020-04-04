@@ -84,14 +84,19 @@ class COCODataset(Dataset):
         
         target = []
         for anno in annotations:
-            xmin, ymin, w, h = anno['bbox']
-            xmax = xmin + w
-            ymax = ymin + h
-            label_ind = anno['category_id']
-            cls_id = self.class_ids.index(label_ind)
-            #cls_id = coco_class_index[cls_id]
-            
-            target.append([xmin, ymin, xmax, ymax, cls_id])  # [xmin, ymin, xmax, ymax, label_ind]
+            if 'bbox' in anno:
+                xmin = np.max((0, anno['bbox'][0]))
+                ymin = np.max((0, anno['bbox'][1]))
+                xmax = xmin + anno['bbox'][2]
+                ymax = ymin + anno['bbox'][3]
+                
+                if anno['area'] > 0 and xmax >= xmin and ymax >= ymin:
+                    label_ind = anno['category_id']
+                    cls_id = self.class_ids.index(label_ind)
+
+                    target.append([xmin, ymin, xmax, ymax, cls_id])  # [xmin, ymin, xmax, ymax, label_ind]
+            else:
+                print('No bbox !!')
         return target
 
     def __getitem__(self, index):
@@ -109,6 +114,7 @@ class COCODataset(Dataset):
             img_file = os.path.join(self.data_dir, 'train2017',
                                     '{:012}'.format(id_) + '.jpg')
             img = cv2.imread(img_file)
+
         assert img is not None
 
         height, width, channels = img.shape
@@ -117,13 +123,25 @@ class COCODataset(Dataset):
         # start here :
         target = []
         for anno in annotations:
-            xmin, ymin, w, h = anno['bbox']
-            xmax = xmin + w
-            ymax = ymin + h
-            label_ind = anno['category_id']
-            cls_id = self.class_ids.index(label_ind)
-            
-            target.append([xmin/width, ymin/height, xmax/width, ymax/height, cls_id])  # [xmin, ymin, xmax, ymax, label_ind]
+            if 'bbox' in anno and anno['area'] > 0:   
+                xmin = np.max((0, anno['bbox'][0]))
+                ymin = np.max((0, anno['bbox'][1]))
+                xmax = np.min((width - 1, xmin + np.max((0, anno['bbox'][2] - 1))))
+                ymax = np.min((height - 1, ymin + np.max((0, anno['bbox'][3] - 1))))
+                # xmin, ymin, w, h = anno['bbox']
+                # xmax = xmin + w
+                # ymax = ymin + h
+                if xmax > xmin and ymax > ymin:
+                    label_ind = anno['category_id']
+                    cls_id = self.class_ids.index(label_ind)
+                    xmin /= width
+                    ymin /= height
+                    xmax /= width
+                    ymax /= height
+
+                    target.append([xmin, ymin, xmax, ymax, cls_id])  # [xmin, ymin, xmax, ymax, label_ind]
+            else:
+                print('No bbox !!!')
         # end here .
 
         if len(target) == 0:

@@ -52,12 +52,3 @@ coco_ab = {
     'clip': True,
     'name': 'COCO',
 }
-
-imagenet = {
-    'batch_size': 64,
-    'resize': 448,
-    'max_epoch': 10,
-    'lr': 1e-3,
-    'data_path': "/home/k545/object-detection/myYOLO/backbone/imagenet/",
-    'model_name': 'darknet19'
-}
