@@ -373,7 +373,7 @@ def loss(pred, label, num_classes, use_focal=False, obj=5.0, noobj=1.0):
     if use_focal:
         obj_loss_function = BCE_focal_loss(reduction='mean')
     else:
-        obj_loss_function = MSELoss(reduction='mean')# BCELoss(reduction='mean')
+        obj_loss_function = MSELoss(reduction='mean') # BCELoss(reduction='mean')
     cls_loss_function = nn.CrossEntropyLoss(reduction='none')
     txty_loss_function = nn.BCEWithLogitsLoss(reduction='none')
     twth_loss_function = nn.MSELoss(reduction='none')
