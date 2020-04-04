@@ -343,7 +343,7 @@ def voc_eval(detpath,
     return rec, prec, ap
 
 
-def test_net(net, dataset, device, transform, top_k):
+def test_net(net, dataset, device, top_k):
     num_images = len(dataset)
     # all detections are collected into:
     #    all_boxes[cls][image] = N x 5 array of detections in
@@ -401,20 +401,20 @@ if __name__ == '__main__':
     cfg = config.voc_ab
     if args.version == 'yolo_v2':
         from models.yolo_v2 import myYOLOv2
-        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE)
     
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
-        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE)
     
     elif args.version == 'tiny_yolo_v2':
         from models.tiny_yolo_v2 import YOLOv2tiny    
-        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE)
         print('Let us eval tiny-yolo-v2 on the VOC0712 dataset ......')
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
-        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE)
         print('Let us eval tiny-yolo-v3 on the VOC0712 dataset ......')
 
     # load net
@@ -423,10 +423,8 @@ if __name__ == '__main__':
     print('Finished loading model!')
     # load data
     dataset = VOCDetection(args.voc_root, [('2007', set_type)],
-                           BaseTransform(net.input_size, dataset_mean),
+                           BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
                            VOCAnnotationTransform())
     net = net.to(device)
     # evaluation
-    test_net(net, dataset, device,
-             BaseTransform(net.input_size, dataset_mean), args.top_k,
-             )
+    test_net(net, dataset, device, args.top_k)

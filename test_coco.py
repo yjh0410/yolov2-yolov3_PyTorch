@@ -12,18 +12,15 @@ import time
 from decimal import *
 
 
-
 parser = argparse.ArgumentParser(description='YOLO-v2 Detection')
-parser.add_argument('-v', '--version', default='yolo_v2, yolo_v3',
-                    help='yolo_v2')
+parser.add_argument('-v', '--version', default='yolo_v2',
+                    help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-d', '--dataset', default='COCO',
                     help='we use VOC-test or COCO-val to test.')
 parser.add_argument('--trained_model', default='weights_yolo_v2/yolo_v2_72.2.pth',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
-parser.add_argument('--cuda', default=True, type=bool,
-                    help='Use cuda to test model') 
 parser.add_argument('--dataset_root', default='./data/COCO/', 
                     help='Location of VOC root directory')
 parser.add_argument('-f', default=None, type=str, 
@@ -59,7 +56,10 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
     num_images = len(testset)
     for index in range(num_images):
         print('Testing image {:d}/{:d}....'.format(index+1, num_images))
-        img, _ = testset.pull_image(index)
+        if args.version == 'COCO':
+            img, _ = testset.pull_image(index)
+        elif args.version == 'VOC':
+            img = testset.pull_image(index)
         # img_id, annotation = testset.pull_anno(i)
         x = torch.from_numpy(transform(img)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
         x = x.unsqueeze(0).to(device)
@@ -117,21 +117,21 @@ def test():
 
     if args.version == 'yolo_v2':
         from models.yolo_v2 import myYOLOv2
-        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
+        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE_COCO)
         print('Let us test yolo-v2 on the MSCOCO dataset ......')
     
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
-        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
+        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE_COCO)
 
     elif args.version == 'tiny_yolo_v2':
         from models.tiny_yolo_v2 import YOLOv2tiny    
-        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE_COCO)
    
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
     
-        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE_COCO)
 
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
     net.to(device).eval()
@@ -139,7 +139,7 @@ def test():
 
     # evaluation
     test_net(net, device, testset,
-             BaseTransform(net.input_size, mean),
+             BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
              thresh=args.visual_threshold)
 
 if __name__ == '__main__':

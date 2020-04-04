@@ -82,22 +82,22 @@ def test():
     cfg = config.voc_ab
     if args.version == 'yolo_v2':
         from models.yolo_v2 import myYOLOv2
-        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE)
         print('Let us test yolo-v2 on the VOC0712 dataset ......')
 
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
-        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE)
     
     elif args.version == 'tiny_yolo_v2':
         from models.tiny_yolo_v2 import YOLOv2tiny    
-        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.ANCHOR_SIZE)
+        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE)
         print('Let us test tiny-yolo-v2 on the VOC0712 dataset ......')
    
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
     
-        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE)
         print('Let us test tiny-yolo-v3 on the VOC0712 dataset ......')
 
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
@@ -106,7 +106,7 @@ def test():
 
     # evaluation
     test_net(net, device, testset,
-             BaseTransform(net.input_size, mean),
+             BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
              thresh=args.visual_threshold)
 
 if __name__ == '__main__':

@@ -168,16 +168,11 @@ def set_anchors(anchor_size):
 
 def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
     xmin, ymin, xmax, ymax = gt_label[:-1]
-    # map it to the image
-    xmin *= w
-    ymin *= h
-    xmax *= w
-    ymax *= h
     # compute the center, width and height
-    c_x = (xmax + xmin) / 2
-    c_y = (ymax + ymin) / 2
-    box_w = xmax - xmin
-    box_h = ymax - ymin
+    c_x = (xmax + xmin) / 2 * w
+    c_y = (ymax + ymin) / 2 * h
+    box_w = (xmax - xmin) * w
+    box_h = (ymax - ymin) * h
 
     if box_w < 1e-28 or box_h < 1e-28:
         # print('A dirty data !!!')
@@ -294,16 +289,11 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
             # get a bbox coords
             gt_class = int(gt_label[-1])
             xmin, ymin, xmax, ymax = gt_label[:-1]
-            # map it to the image
-            xmin *= w
-            ymin *= h
-            xmax *= w
-            ymax *= h
             # compute the center, width and height
-            c_x = (xmax + xmin) / 2
-            c_y = (ymax + ymin) / 2
-            box_w = xmax - xmin
-            box_h = ymax - ymin
+            c_x = (xmax + xmin) / 2 * w
+            c_y = (ymax + ymin) / 2 * h
+            box_w = (xmax - xmin) * w
+            box_h = (ymax - ymin) * h
 
             if box_w < 1e-28 or box_h < 1e-28:
                 # print('A dirty data !!!')
@@ -384,14 +374,15 @@ def loss(pred, label, num_classes, use_focal=False, obj=5.0, noobj=1.0):
         obj_loss_function = BCE_focal_loss(reduction='mean')
     else:
         obj_loss_function = MSELoss(reduction='mean')# BCELoss(reduction='mean')
-    class_loss_function = nn.CrossEntropyLoss(reduction='none')
-    box_loss_function = nn.MSELoss(reduction='none')
+    cls_loss_function = nn.CrossEntropyLoss(reduction='none')
+    txty_loss_function = nn.BCEWithLogitsLoss(reduction='none')
+    twth_loss_function = nn.MSELoss(reduction='none')
 
     pred_obj = torch.sigmoid(pred[:, :, 0])
     pred_class = pred[:, :, 1 : 1+num_classes].permute(0, 2, 1)
     pred_box = pred[:, :, 1+num_classes:]
 
-    pred_box_txty = torch.sigmoid(pred_box[:, :, :2])
+    pred_box_txty = pred_box[:, :, :2]
     pred_box_twth = pred_box[:, :, 2:]
         
 
@@ -408,11 +399,11 @@ def loss(pred, label, num_classes, use_focal=False, obj=5.0, noobj=1.0):
         obj_loss = obj * pos_loss + noobj * neg_loss
     
     # class loss
-    class_loss = torch.mean(torch.sum(class_loss_function(pred_class, gt_class) * gt_obj, 1))
+    class_loss = torch.mean(torch.sum(cls_loss_function(pred_class, gt_class) * gt_obj, 1))
     
     # box loss
-    box_loss_txty = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_txty, gt_box[:, :, :2]), 2) * gt_obj, 1))
-    box_loss_twth = torch.mean(torch.sum(torch.sum(box_loss_function(pred_box_twth, gt_box[:, :, 2:]), 2) * gt_obj * gt_box_scale_weight, 1))
+    box_loss_txty = torch.mean(torch.sum(torch.sum(txty_loss_function(pred_box_txty, gt_box[:, :, :2]), 2) * gt_obj * gt_box_scale_weight, 1))
+    box_loss_twth = torch.mean(torch.sum(torch.sum(twth_loss_function(pred_box_twth, gt_box[:, :, 2:]), 2) * gt_obj * gt_box_scale_weight, 1))
 
     box_loss = box_loss_txty + box_loss_twth
 

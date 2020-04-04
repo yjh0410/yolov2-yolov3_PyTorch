@@ -11,7 +11,7 @@ import os
 import random
 import argparse
 import time
-import matplotlib.pyplot as plt
+import math
 import numpy as np
 
 import torch
@@ -24,21 +24,23 @@ parser.add_argument('-v', '--version', default='yolo_v2',
                     help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-d', '--dataset', default='VOC',
                     help='VOC or COCO dataset')
-parser.add_argument('-hr', '--high_resolution', type=int, default=0,
-                    help='0: use high resolution to pretrain; 1: else not.')   
-parser.add_argument('-ms', '--multi_scale', type=int, default=0,
-                    help='1: use multi-scale trick; 0: else not')                                   
-parser.add_argument('-fl', '--use_focal', type=int, default=0,
-                    help='0: use focal loss; 1: else not;')
-parser.add_argument('--batch_size', default=64, type=int, 
+parser.add_argument('-hr', '--high_resolution', action='store_true', default=False,
+                    help='use high resolution to pretrain.')  
+parser.add_argument('-ms', '--multi_scale', action='store_true', default=False,
+                    help='use multi-scale trick')                  
+parser.add_argument('-fl', '--use_focal', action='store_true', default=False,
+                    help='use focal loss')
+parser.add_argument('--batch_size', default=32, type=int, 
                     help='Batch size for training')
-parser.add_argument('--lr', default=1e-4, type=float, 
+parser.add_argument('--lr', default=1e-3, type=float, 
                     help='initial learning rate')
-parser.add_argument('--obj', default=1.0, type=float,
+parser.add_argument('--obj', default=5.0, type=float,
                     help='the weight of obj loss')
-parser.add_argument('--noobj', default=0.5, type=float,
+parser.add_argument('--noobj', default=1.0, type=float,
                     help='the weight of noobj loss')
-parser.add_argument('-wp', '--warm_up', type=str, default='yes',
+parser.add_argument('-cos', '--cos', action='store_true', default=False,
+                    help='use cos lr')
+parser.add_argument('-no_wp', '--no_warm_up', action='store_true', default=False,
                     help='yes or no to choose using warmup strategy to train')
 parser.add_argument('--wp_epoch', type=int, default=4,
                     help='The upper bound of warm-up')
@@ -72,23 +74,23 @@ def train(net, device):
     # set GPU
 
     use_focal = False
-    if args.use_focal == 1:
+    if args.use_focal:
         print("Let's use focal loss for objectness !!!")
         use_focal = True
 
-    if args.multi_scale == 1:
+    if args.multi_scale:
         print('Let us use the multi-scale trick.')
         ms_inds = range(len(cfg['multi_scale']))
         dataset = COCODataset(
                     data_dir=data_dir,
                     img_size=608,
-                    transform=SSDAugmentation([608, 608], MEANS),
+                    transform=SSDAugmentation([608, 608], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
                     debug=args.debug)
     else:
         dataset = COCODataset(
                     data_dir=data_dir,
                     img_size=cfg['min_dim'][0],
-                    transform=SSDAugmentation(cfg['min_dim'], MEANS),
+                    transform=SSDAugmentation(cfg['min_dim'], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
                     debug=args.debug)
     
     print("Setting Arguments.. : ", args)
@@ -103,19 +105,14 @@ def train(net, device):
     input_size = cfg['min_dim']
     num_classes = args.num_classes
     batch_size = args.batch_size
-    save_folder = args.save_folder
 
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
+    os.makedirs(args.save_folder + args.version, exist_ok=True)
 
     # using tfboard
     from tensorboardX import SummaryWriter
     c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-    log_path = 'log/yolo_v2/coco/' + c_time
-    if not os.path.exists(log_path):
-        os.mkdir(log_path)
-    if not os.path.exists(log_path):
-        os.mkdir(log_path)
+    log_path = 'log/coco/' + c_time
+    os.makedirs(log_path, exist_ok=True)
 
     writer = SummaryWriter(log_path)
 
@@ -142,10 +139,10 @@ def train(net, device):
                     )
 
     # optimizer setup
-    # optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum,
-    #                       dampening=0, weight_decay=args.weight_decay)
-    # optimizer = optim.Adam(model.parameters())
     lr = args.lr
+    # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
+    #                                         weight_decay=args.weight_decay)
+    # optimizer = optim.Adam(model.parameters())
     optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
 
     step_index = 0
@@ -153,24 +150,35 @@ def train(net, device):
     # each part of loss weight
     obj_w = 1.0
     cla_w = 1.0
-    box_w = 2.0
+    box_w = 1.0
 
     # start training loop
     iteration = 0
+    t0 = time.time()
+
     for epoch in range(cfg['max_epoch']):
         batch_iterator = iter(dataloader)
 
-        # No WarmUp strategy or WarmUp tage has finished.
-        if epoch in cfg['lr_epoch']:
-            step_index += 1
-            lr = adjust_learning_rate(optimizer, args.gamma, step_index)
-
+        # use cos lr
+        if args.cos and epoch > 20 and epoch <= cfg['max_epoch'] - 20:
+            # use cos lr
+            lr = cos_lr(optimizer, epoch, cfg['max_epoch'])
+        elif args.cos and epoch > cfg['max_epoch'] - 20:
+            lr = 0.00001  
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+        # use step lr
+        else:
+            if epoch in cfg['lr_epoch']:
+                step_index += 1
+                lr = adjust_learning_rate(optimizer, args.gamma, step_index)
+    
         # COCO evaluation
         if (epoch + 1) % args.eval_epoch == 0:
             model.trainable = False
             ap50_95, ap50 = evaluator.evaluate(model)
             print('ap50 : ', ap50)
-            print('ap90_95 : ', ap50_95)
+            print('ap50_95 : ', ap50_95)
             model.trainable = True
             model.train()
             writer.add_scalar('val/COCOAP50', ap50, epoch + 1)
@@ -178,28 +186,32 @@ def train(net, device):
 
         # subdivision loop
         for images, targets in batch_iterator:
+            # WarmUp strategy for learning rate
+            if not args.no_warm_up == 'yes':
+                if epoch < args.wp_epoch:
+                    lr = warmup_strategy(optimizer, epoch_size, iteration)
+
             iteration += 1
         
             # multi-scale trick
-            if iteration % 10 == 0 and args.multi_scale == 1:
+            if iteration % 10 == 0 and args.multi_scale:
                 ms_ind = random.sample(ms_inds, 1)[0]
                 input_size = cfg['multi_scale'][int(ms_ind)]
             
             # multi scale
-            if args.multi_scale == 1:
+            if args.multi_scale:
                 images = torch.nn.functional.interpolate(images, size=input_size, mode='bilinear', align_corners=True)
 
             targets = [label.tolist() for label in targets]
-            if args.version == 'yolo_v2':
-                targets = tools.gt_creator(input_size, yolo_net.stride, args.num_classes, targets, name='COCO')
-            elif args.version == 'yolo_v3':
-                targets = tools.multi_gt_creator(input_size, yolo_net.stride, args.num_classes, targets, name='COCO')
+            if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
+                targets = tools.gt_creator(input_size, yolo_net.stride, targets, name='COCO')
+            elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
+                targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, name='COCO')
 
             targets = torch.tensor(targets).float().to(device)
 
-            t0 = time.time()
             out = model(images.to(device))
-            
+
             optimizer.zero_grad()
 
             obj_loss, class_loss, box_loss = tools.loss(out, targets, num_classes=args.num_classes, 
@@ -216,18 +228,30 @@ def train(net, device):
             # backprop
             total_loss.backward()        
             optimizer.step()
-            t1 = time.time()
 
             if iteration % 10 == 0:
-                print('timer: %.4f sec.' % (t1 - t0))
-                # print(obj_loss.item(), class_loss.item(), box_loss.item())
-                print('Epoch[%d / %d]' % (epoch+1, cfg['max_epoch']) + ' || iter ' + repr(iteration) + \
-                      ' || Loss: %.4f ||' % (total_loss.item()) + ' || lr: %.8f ||' % (lr) + ' || input size: %d ||' % input_size[0], end=' ')
+                t1 = time.time()
+                print('[Epoch %d/%d][Iter %d][lr %.8f]'
+                    '[Loss: obj %.2f || cls %.2f || bbox %.2f || total %.2f || imgsize %d || time: %.2f]'
+                        % (epoch+1, cfg['max_epoch'], iteration, lr,
+                            obj_loss.item(), class_loss.item(), box_loss.item(), total_loss.item(), input_size[0], t1-t0),
+                        flush=True)
+
+                t0 = time.time()
+
 
         if (epoch + 1) % 10 == 0:
             print('Saving state, epoch:', epoch + 1)
-            torch.save(yolo_net.state_dict(), save_folder+ '/' + args.version + '_' +
-                    repr(epoch + 1) + '.pth')
+            torch.save(yolo_net.state_dict(), os.path.join(args.save_folder + args.version, 
+                        args.version + '_' + repr(epoch + 1) + '.pth')
+                        )  
+
+def cos_lr(optimizer, epoch, max_epoch):
+    min_lr = 0.00001
+    lr = min_lr + 0.5*(args.lr-min_lr)*(1+math.cos(math.pi*(epoch-20)*1./ (max_epoch-20)))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return lr
 
 def adjust_learning_rate(optimizer, gamma, step):
     lr = args.lr * (gamma ** (step))
@@ -236,7 +260,7 @@ def adjust_learning_rate(optimizer, gamma, step):
     return lr
 
 def warmup_strategy(optimizer, epoch_size, iteration):
-    lr = 1e-5 + (args.lr-1e-5) * iteration / (epoch_size * (args.wp_epoch)) 
+    lr = 1e-6 + (args.lr-1e-6) * iteration / (epoch_size * (args.wp_epoch)) 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
@@ -247,7 +271,7 @@ if __name__ == '__main__':
     hr = False
     device = get_device(args.gpu_ind)
     
-    if args.high_resolution == 1:
+    if args.high_resolution:
         hr = True
     
     cfg = coco_ab
@@ -255,7 +279,7 @@ if __name__ == '__main__':
     if args.version == 'yolo_v2':
         from models.yolo_v2 import myYOLOv2
         total_anchor_size = tools.get_total_anchor_size(name='COCO')
-        print(total_anchor_size)
+
         yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v2 on the MSCOCO dataset ......')
 
@@ -268,14 +292,14 @@ if __name__ == '__main__':
 
     elif args.version == 'tiny_yolo_v2':
         from models.tiny_yolo_v2 import YOLOv2tiny
-        total_anchor_size = tools.get_total_anchor_size()
+        total_anchor_size = tools.get_total_anchor_size(name='COCO')
     
         yolo_net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v2 on the MSCOCO dataset ......')
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
-        total_anchor_size = tools.get_total_anchor_size(multi_scale=True)
+        total_anchor_size = tools.get_total_anchor_size(multi_scale=True, name='COCO')
     
         yolo_net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v3 on the MSCOCO dataset ......')
