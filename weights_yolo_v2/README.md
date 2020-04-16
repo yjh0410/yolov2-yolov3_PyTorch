@@ -16,4 +16,4 @@ link: https://pan.baidu.com/s/1bLpGQTG70rbeeC3KXxPIpA
 
 password: 499d 
 
-The googledrive link will be pushed after a while, so just hold on ~
+link: https://drive.google.com/open?id=1Yrxz2IW3nzMZiX6EvcTzayDlH8ju4ZFc
