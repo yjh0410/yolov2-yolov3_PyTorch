@@ -1,3 +1,12 @@
+# the whole project
+In this project, you can enjoy yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3. What I have to say is that I don't try to 100% reproduce official YOLO, because it is really difficult and I have not much computation resource. Therefore, I did some simplification. For example:
+
+1. For objectness, official YOLO firstly computes iou between all predicting bboxes and groundtruth bboxes, then pick up the one whose iou is the largest and set the learning target of objectness as the iou value. But what I do is to set objectness target as 1 if there is a object, otherwise 0. My method is really easy, right? I'm so lazy. HAHA!
+
+2. For making positive samples, in official YOLOv3 system, it dynamically makes labels. Specifically, during training stage, after computing all ious between predicting bboxes and groundtruth bboxes, YOLO chooses the anchor box whose iou is larger than ignore threshold and guides this anchor box to learn the label. However, I do this before training, just like SSD. The reason is that it is easy to implement.
+
+In a word, this project is an exercise, and I prefer to call it a lazy version of YOLO. HAHA!! If you guys are interested in the authentic YOLO reproduced by PyTorch, this project might not suit you. 
+
 # tiny-yolo-v2 and tiny-yolo-v3
 Good news again !!!
 
@@ -7,7 +16,7 @@ So, have fun !
 # pytorch-yolo-v3
 Good news !!!
 
-In this update, I add yolo-v3 model which gets 80.8 mAP ( with 416 input, and no multi-scale training trick ) on VOC2007-test. For more details, you could see code files including ```models/yolo_v3.py``` and ```tools.py```.
+In this update, I add yolo-v3 model which gets 81.0 mAP ( with 416 input, and no multi-scale training trick ) on VOC2007-test. For more details, you could see code files including ```models/yolo_v3.py``` and ```tools.py```.
 
 In addition, you can replace darknet-53 with darknet-19 as the backbone of yolo-v3, and this model can get 78.6 mAP on VOC2007-test.
 
@@ -18,7 +27,7 @@ But !! I don't plan to one hundred percent reproduce it, so my own yolo-v2 is a 
 
 It is known to us that reproducing the model is easy while it is hard to reproduce the results shown in the paper.
 
-As the Chinese new years(2020-1-24) is comming, I have no more energy to adjust my yolo-v2 which means my model can't get the same result as origin yolo-v2 (76.8 mAP with 416 and 78.6 with 608). If you really care about this point, my project can't satisfy you. And there are many other excellent projects reproducing origin yolo-v2, so just consider to clone them and try on your task.
+As the Chinese new years(2020-1-24) is comming, I have no more energy to adjust my yolo-v2 which means my model can't get the same result as origin yolo-v2 (76.8 mAP with 416 and 78.6 with 544). If you really care about this point, my project can't satisfy you. And there are many other excellent projects reproducing origin yolo-v2, so just consider to clone them and try on your task.
 
 Before I tell you guys how to use this project, I must say something about difference between origin yolo-v2 and mine:
 
@@ -28,7 +37,7 @@ Before I tell you guys how to use this project, I must say something about diffe
 
 - For data augmentation, I copy the augmentation codes from the https://github.com/amdegroot/ssd.pytorch which is a superb project reproducing the SSD. If anyone is interested in SSD, just clone it to learn !(Don't forget to star it !)
 
-My yolo-v2 got 75.2 mAP with 416 input and 77.2 mAP with 608 input on VOC2007 test, lower than origin yolo-v2 that got 76.8% mAP with the same image size. This is maybe because that there are two tricks that didn't work:
+My yolo-v2 got 75.2 mAP with 416 input size, lower than origin yolo-v2 that got 76.8% mAP with the same image size. With 608 input size, my yolo-v2 gets 77.2 mAP. This is maybe because that there are two tricks that didn't work:
 
 1. hi-res classifier
 
