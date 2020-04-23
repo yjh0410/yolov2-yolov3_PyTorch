@@ -426,5 +426,7 @@ if __name__ == '__main__':
                            BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
                            VOCAnnotationTransform())
     net = net.to(device)
+    
     # evaluation
-    test_net(net, dataset, device, args.top_k)
+    with torch.no_grad():
+        test_net(net, dataset, device, args.top_k)
