@@ -1,9 +1,8 @@
 # the whole project
 In this project, you can enjoy yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3. What I have to say is that I don't try to 100% reproduce official YOLO, because it is really difficult and I have not much computation resource. Therefore, I did some simplification. For example:
 
-1. For objectness, official YOLO firstly computes iou between all predicting bboxes and groundtruth bboxes, then pick up the one whose iou is the largest and set the learning target of objectness as the iou value. But what I do is to set objectness target as 1 if there is a object, otherwise 0. My method is really easy, right? I'm so lazy. HAHA!
+For objectness, official YOLO firstly computes iou between all predicting bboxes and groundtruth bboxes, then pick up the one whose iou is the largest and set the learning target of objectness as the iou value. But what I do is to set objectness target as 1 if there is a object, otherwise 0. My method is really easy, right? I'm so lazy. HAHA!
 
-2. For making positive samples, in official YOLOv3 system, it dynamically makes labels. Specifically, during training stage, after computing all ious between predicting bboxes and groundtruth bboxes, YOLO chooses the anchor box whose iou is larger than ignore threshold and guides this anchor box to learn the label. However, I do this before training, just like SSD. The reason is that it is easy to implement.
 
 In a word, this project is an exercise, and I prefer to call it a lazy version of YOLO. HAHA!! If you guys are interested in the authentic YOLO reproduced by PyTorch, this project might not suit you. 
 
