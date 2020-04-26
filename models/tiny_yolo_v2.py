@@ -18,7 +18,8 @@ class YOLOv2tiny(nn.Module):
         self.anchor_size = torch.tensor(anchor_size)
         self.anchor_number = len(anchor_size)
         self.stride = 32
-        self.grid_cell, self.all_anchor_wh = self.create_grid()
+        # init set
+        self.grid_cell, self.all_anchor_wh = self.create_grid(input_size)
         self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
         self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
@@ -37,44 +38,60 @@ class YOLOv2tiny(nn.Module):
         self.convsets_2 = Conv2d(640, 512, 3, 1, leakyReLU=True)
         
         # prediction layer
-        self.pred_ = nn.Conv2d(512, self.anchor_number*(1 + 4 + self.num_classes), 1)
+        self.pred = nn.Conv2d(512, self.anchor_number*(1 + 4 + self.num_classes), 1)
 
-    def create_grid(self):
-        w, h = self.input_size[1], self.input_size[0]
+    def create_grid(self, input_size):
+        w, h = input_size[1], input_size[0]
         # generate grid cells
         ws, hs = w // self.stride, h // self.stride
         grid_y, grid_x = torch.meshgrid([torch.arange(hs), torch.arange(ws)])
         grid_xy = torch.stack([grid_x, grid_y], dim=-1).float()
-        grid_xy = grid_xy.view(1, hs*ws, 1, 2)
+        grid_xy = grid_xy.view(1, hs*ws, 1, 2).to(self.device)
 
         # generate anchor_wh tensor
-        anchor_wh = self.anchor_size.repeat(hs*ws, 1, 1).unsqueeze(0)
+        anchor_wh = self.anchor_size.repeat(hs*ws, 1, 1).unsqueeze(0).to(self.device)
+
 
         return grid_xy, anchor_wh
-                
-    def decode_boxes(self, xywh_pred):
+
+    def set_grid(self, input_size):
+        return self.create_grid(input_size)
+
+    def decode_xywh(self, txtytwth_pred):
         """
             Input:
-                xywh_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
+                txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
             Output:
-                bbox_pred : [B, H*W, anchor_n, 4] containing [c_x, c_y, w, h]
+                xywh_pred : [B, H*W*anchor_n, 4] containing [xmin, ymin, xmax, ymax]
         """
         # b_x = sigmoid(tx) + gride_x,  b_y = sigmoid(ty) + gride_y
-        B, HW, ab_n, _ = xywh_pred.size()
-        c_xy_pred = torch.sigmoid(xywh_pred[:, :, :, :2]) + self.grid_cell
+        B, HW, ab_n, _ = txtytwth_pred.size()
+        xy_pred = torch.sigmoid(txtytwth_pred[:, :, :, :2]) + self.grid_cell
         # b_w = anchor_w * exp(tw),     b_h = anchor_h * exp(th)
-        b_wh_pred = torch.exp(xywh_pred[:, :, :, 2:]) * self.all_anchor_wh
+        wh_pred = torch.exp(txtytwth_pred[:, :, :, 2:]) * self.all_anchor_wh
         # [H*W, anchor_n, 4] -> [H*W*anchor_n, 4]
-        bbox_pred = torch.cat([c_xy_pred, b_wh_pred], -1).view(B, HW*ab_n, 4)
+        xywh_pred = torch.cat([xy_pred, wh_pred], -1).view(B, HW*ab_n, 4) * self.stride
+
+        return xywh_pred
+    
+    def decode_boxes(self, txtytwth_pred):
+        """
+            Input:
+                txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
+            Output:
+                x1y1x2y2_pred : [B, H*W*anchor_n, 4] containing [xmin, ymin, xmax, ymax]
+        """
+        # [H*W*anchor_n, 4]
+        xywh_pred = self.decode_xywh(txtytwth_pred)
 
         # [center_x, center_y, w, h] -> [xmin, ymin, xmax, ymax]
-        output = torch.zeros(bbox_pred.size())
-        output[:, :, 0] = (bbox_pred[:, :, 0] - bbox_pred[:, :, 2] / 2) * self.stride
-        output[:, :, 1] = (bbox_pred[:, :, 1] - bbox_pred[:, :, 3] / 2) * self.stride
-        output[:, :, 2] = (bbox_pred[:, :, 0] + bbox_pred[:, :, 2] / 2) * self.stride
-        output[:, :, 3] = (bbox_pred[:, :, 1] + bbox_pred[:, :, 3] / 2) * self.stride
+        x1y1x2y2_pred = torch.zeros_like(xywh_pred)
+        x1y1x2y2_pred[:, :, 0] = (xywh_pred[:, :, 0] - xywh_pred[:, :, 2] / 2)
+        x1y1x2y2_pred[:, :, 1] = (xywh_pred[:, :, 1] - xywh_pred[:, :, 3] / 2)
+        x1y1x2y2_pred[:, :, 2] = (xywh_pred[:, :, 0] + xywh_pred[:, :, 2] / 2)
+        x1y1x2y2_pred[:, :, 3] = (xywh_pred[:, :, 1] + xywh_pred[:, :, 3] / 2)
         
-        return output
+        return x1y1x2y2_pred
 
     def nms(self, dets, scores):
         """"Pure Python NMS baseline."""
@@ -107,7 +124,7 @@ class YOLOv2tiny(nn.Module):
 
         return keep
 
-    def postprocess(self, all_local, all_conf, exchange=True, im_shape=None):
+    def postprocess(self, all_local, all_conf):
         """
         bbox_pred: (HxW*anchor_n, 4), bsize = 1
         prob_pred: (HxW*anchor_n, num_classes), bsize = 1
@@ -141,10 +158,6 @@ class YOLOv2tiny(nn.Module):
         scores = scores[keep]
         cls_inds = cls_inds[keep]
 
-        if im_shape != None:
-            # clip
-            bbox_pred = self.clip_boxes(bbox_pred, im_shape)
-
         return bbox_pred, scores, cls_inds
 
     def forward(self, x):
@@ -160,28 +173,28 @@ class YOLOv2tiny(nn.Module):
         # route concatenate
         fp = torch.cat([fp_1, fp_2], dim=1)
         fp = self.convsets_2(fp)
-        prediction = self.pred_(fp)
+        prediction = self.pred(fp)
 
         B, abC, H, W = prediction.size()
 
         # [B, anchor_n * C, N, M] -> [B, N, M, anchor_n * C] -> [B, N*M, anchor_n*C]
         prediction = prediction.permute(0, 2, 3, 1).contiguous().view(B, H*W, abC)
 
-        # Divide prediction to obj_pred, xywh_pred and cls_pred   
+        # Divide prediction to obj_pred, txtytwth_pred and cls_pred   
         # [B, H*W*anchor_n, 1]
         obj_pred = prediction[:, :, :1 * self.anchor_number].contiguous().view(B, H*W*self.anchor_number, 1)
         # [B, H*W, anchor_n, num_cls]
         cls_pred = prediction[:, :, 1 * self.anchor_number : (1 + self.num_classes) * self.anchor_number].contiguous().view(B, H*W*self.anchor_number, self.num_classes)
         # [B, H*W, anchor_n, 4]
-        xywh_pred = prediction[:, :, (1 + self.num_classes) * self.anchor_number:].contiguous()
+        txtytwth_pred = prediction[:, :, (1 + self.num_classes) * self.anchor_number:].contiguous()
         
         # test
         if not self.trainable:
-            xywh_pred = xywh_pred.view(B, H*W*self.anchor_number, 4).view(B, H*W, self.anchor_number, 4)
+            txtytwth_pred = txtytwth_pred.view(B, H*W, self.anchor_number, 4)
             with torch.no_grad():
                 # batch size = 1                
                 all_obj = torch.sigmoid(obj_pred)[0]           # 0 is because that these is only 1 batch.
-                all_bbox = torch.clamp(self.decode_boxes(xywh_pred)[0] / self.scale_torch, 0., 1.)
+                all_bbox = torch.clamp(self.decode_boxes(txtytwth_pred)[0] / self.scale_torch, 0., 1.)
                 all_class = (torch.softmax(cls_pred[0, :, :], 1) * all_obj)
                 # separate box pred and class conf
                 all_obj = all_obj.to('cpu').numpy()
@@ -192,7 +205,7 @@ class YOLOv2tiny(nn.Module):
 
                 return bboxes, scores, cls_inds
 
-        xywh_pred = xywh_pred.view(B, H*W*self.anchor_number, 4)
-        final_prediction = torch.cat([obj_pred, cls_pred, xywh_pred], -1)
+        txtytwth_pred = txtytwth_pred.view(B, H*W*self.anchor_number, 4)
+        final_prediction = torch.cat([obj_pred, cls_pred, txtytwth_pred], -1)
 
         return final_prediction

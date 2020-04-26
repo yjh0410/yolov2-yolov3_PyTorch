@@ -6,7 +6,6 @@ import torch.backends.cudnn as cudnn
 from data import VOC_ROOT, VOC_CLASSES
 from data import VOCAnnotationTransform, VOCDetection, BaseTransform, VOC_CLASSES
 from data import config
-from utils import get_device
 import numpy as np
 import cv2
 import tools
@@ -23,8 +22,8 @@ parser.add_argument('--trained_model', default='weights_yolo_v2/yolo_v2_72.2.pth
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
-parser.add_argument('--gpu_ind', default=0, type=int, 
-                    help='To choose your gpu.')
+parser.add_argument('--cuda', action='store_true', default=False, 
+                    help='use cuda.')
 parser.add_argument('--voc_root', default=VOC_ROOT, 
                     help='Location of VOC root directory')
 parser.add_argument('-f', default=None, type=str, 
@@ -72,7 +71,12 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
 
 def test():
     # get device
-    device = get_device(args.gpu_ind)
+    if args.cuda:
+        print('use cuda')
+        cudnn.benchmark = True
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
 
     # load net
     num_classes = len(VOC_CLASSES)
@@ -100,7 +104,7 @@ def test():
         net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE)
         print('Let us test tiny-yolo-v3 on the VOC0712 dataset ......')
 
-    net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
+    net.load_state_dict(torch.load(args.trained_model, map_location=device))
     net.to(device).eval()
     print('Finished loading model!')
 

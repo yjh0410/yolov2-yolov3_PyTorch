@@ -17,16 +17,13 @@ class myYOLOv3(nn.Module):
         self.stride = [8, 16, 32]
         self.anchor_size = torch.tensor(anchor_size).view(3, len(anchor_size) // 3, 2)
         self.anchor_number = self.anchor_size.size(1)
-        # self.anchor_size[0, :] *= 4
-        # self.anchor_size[1, :] *= 2
-        # self.anchor_size[2, :] *= 1
 
-        self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid()
+        self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid(input_size)
         self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
         self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
         # backbone darknet-53 (optional: darknet-19)
-        self.backbone = darknet19(pretrained=trainable, hr=hr)
+        self.backbone = darknet53(pretrained=trainable, hr=hr)
         
         # s = 32
         self.conv_set_3 = nn.Sequential(
@@ -63,11 +60,11 @@ class myYOLOv3(nn.Module):
         self.extra_conv_1 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
         self.pred_1 = nn.Conv2d(256, self.anchor_number*(1 + 4 + self.num_classes), 1)
     
-    def create_grid(self):
+    def create_grid(self, input_size):
         total_grid_xy = []
         total_stride = []
         total_anchor_wh = []
-        w, h = self.input_size[1], self.input_size[0]
+        w, h = input_size[1], input_size[0]
         for ind, s in enumerate(self.stride):
             # generate grid cells
             ws, hs = w // s, h // s
@@ -90,13 +87,16 @@ class myYOLOv3(nn.Module):
         total_anchor_wh = torch.cat(total_anchor_wh, dim=0).to(self.device).unsqueeze(0)
 
         return total_grid_xy, total_stride, total_anchor_wh
-        
-    def decode_boxes(self, txtytwth_pred):
+
+    def set_grid(self, input_size):
+        return self.create_grid(input_size)
+
+    def decode_xywh(self, txtytwth_pred):
         """
             Input:
                 txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
             Output:
-                x1y1x2y2_pred : [B, H*W, anchor_n, 4] containing [c_x, c_y, w, h]
+                xywh_pred : [B, H*W*anchor_n, 4] containing [x, y, w, h]
         """
         # b_x = sigmoid(tx) + gride_x,  b_y = sigmoid(ty) + gride_y
         B, HW, ab_n, _ = txtytwth_pred.size()
@@ -105,6 +105,18 @@ class myYOLOv3(nn.Module):
         b_wh_pred = torch.exp(txtytwth_pred[:, :, :, 2:]) * self.all_anchors_wh
         # [B, H*W, anchor_n, 4] -> [B, H*W*anchor_n, 4]
         xywh_pred = torch.cat([c_xy_pred, b_wh_pred], -1).view(B, HW*ab_n, 4)
+
+        return xywh_pred
+
+    def decode_boxes(self, txtytwth_pred):
+        """
+            Input:
+                txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
+            Output:
+                x1y1x2y2_pred : [B, H*W, anchor_n, 4] containing [xmin, ymin, xmax, ymax]
+        """
+        # [B, H*W*anchor_n, 4]
+        xywh_pred = self.decode_xywh(txtytwth_pred)
 
         # [center_x, center_y, w, h] -> [xmin, ymin, xmax, ymax]
         x1y1x2y2_pred = torch.zeros_like(xywh_pred)
@@ -214,10 +226,6 @@ class myYOLOv3(nn.Module):
         # s = 8
         fmp_1 = self.extra_conv_1(fmp_1)
         pred_1 = self.pred_1(fmp_1)
-
-        # fp = self.conv_set(fp)
-        # fp = self.branch(fp)
-        # prediction = self.pred(fp)
 
         preds = [pred_1, pred_2, pred_3]
         total_obj_pred = []

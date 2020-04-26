@@ -19,7 +19,6 @@ import argparse
 import numpy as np
 import pickle
 import cv2
-from utils import get_device
 
 if sys.version_info[0] == 2:
     import xml.etree.cElementTree as ET
@@ -46,8 +45,8 @@ parser.add_argument('--gpu_ind', default=0, type=int,
                     help='To choose your gpu.')
 parser.add_argument('--top_k', default=200, type=int,
                     help='Further restrict the number of predictions to parse')
-parser.add_argument('--cuda', default=True, type=str2bool,
-                    help='Use cuda to train model')
+parser.add_argument('--cuda', action='store_true', default=False,
+                    help='Use cuda')
 parser.add_argument('--voc_root', default=VOC_ROOT,
                     help='Location of VOC root directory')
 parser.add_argument('--cleanup', default=True, type=str2bool,
@@ -61,10 +60,13 @@ if not os.path.exists(args.save_folder):
 if torch.cuda.is_available():
     if args.cuda:
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        cudnn.benchmark = True
+        device = torch.device("cuda")
     if not args.cuda:
         print("WARNING: It looks like you have a CUDA device, but aren't using \
               CUDA.  Run with --cuda for optimal eval speed.")
         torch.set_default_tensor_type('torch.FloatTensor')
+        device = torch.device("cpu")
 else:
     torch.set_default_tensor_type('torch.FloatTensor')
 
@@ -396,7 +398,6 @@ def evaluate_detections(box_list, output_dir, dataset):
 
 if __name__ == '__main__':
     num_classes = len(labelmap)
-    device = get_device(args.gpu_ind)
 
     cfg = config.voc_ab
     if args.version == 'yolo_v2':
