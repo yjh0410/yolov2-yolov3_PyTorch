@@ -3,6 +3,9 @@ In this project, you can enjoy yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3. 
 
 For objectness, official YOLO firstly computes iou between all predicting bboxes and groundtruth bboxes, then pick up the one whose iou is the largest and set the learning target of objectness as the iou value. But what I do is to set objectness target as 1 if there is a object, otherwise 0. My method is really easy, right? I'm so lazy. HAHA!
 
+To get a higher mAP, I add more epochs(total 250 epochs) to train my model. But I find there is something wrong when I visualize detection results. With 250 epochs, my yolo-v2 can get 75.2 mAP while it only gets 73.6 mAP with 160 epoch. However 250epoch model has a worse visualization results. I'm so confused……
+
+Therefore, I have a qeustion: Is the mAP metric really good? Does it really suit object detection?
 
 In a word, this project is an exercise, and I prefer to call it a lazy version of YOLO. HAHA!! If you guys are interested in the authentic YOLO reproduced by PyTorch, this project might not suit you. 
 
@@ -50,9 +53,9 @@ My loss function and groundtruth creator both in the ```tools.py```, and you can
 
 
 ## Installation
-- Pytorch-gpu 1.1.0
+- Pytorch-gpu 1.1.0/1.2.0/1.3.0
 - Tensorboard 1.14.
-- python-opencv, python3, Anaconda3-5.1.0
+- python-opencv, python3.6/3.7
 
 ## Dataset
 As for now, I only train and test on PASCAL VOC2007 and 2012. 
