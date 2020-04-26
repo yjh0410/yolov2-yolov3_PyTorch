@@ -399,7 +399,7 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
     
     return gt_tensor
 
-def loss(pred, label, num_classes, obj=5.0, noobj=1.0, obj_loss_f='bce'):
+def loss(pred, label, num_classes, obj=5.0, noobj=1.0, obj_loss_f='mse'):
     if obj_loss_f == 'bce':
         obj_loss_function = BCELoss(reduction='mean') # MSELoss(reduction='mean')
     elif obj_loss_f == 'mse':
