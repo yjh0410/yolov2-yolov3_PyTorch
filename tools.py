@@ -11,13 +11,11 @@ class BCELoss(nn.Module):
     def __init__(self,  weight=None, ignore_index=-100, reduce=None, reduction='mean'):
         super(BCELoss, self).__init__()
         self.reduction = reduction
-    def forward(self, inputs, targets):
-        pos_id = (targets==1.0).float()
-        neg_id = (targets==0.0).float()
-        pos_loss = -pos_id * torch.log(inputs + 1e-14)
+    def forward(self, inputs, targets, mask):
+        pos_id = (mask==1.0).float()
+        neg_id = (mask==0.0).float()
+        pos_loss = -pos_id * (targets * torch.log(inputs + 1e-14) + (1 - targets) * torch.log(1.0 - inputs + 1e-14))
         neg_loss = -neg_id * torch.log(1.0 - inputs + 1e-14)
-        pos_num = torch.sum(pos_id, 1)
-        neg_num = torch.sum(neg_id, 1)
         if self.reduction == 'mean':
             pos_loss = torch.mean(torch.sum(pos_loss, 1))
             neg_loss = torch.mean(torch.sum(neg_loss, 1))
@@ -29,14 +27,12 @@ class MSELoss(nn.Module):
     def __init__(self,  weight=None, size_average=None, ignore_index=-100, reduce=None, reduction='mean'):
         super(MSELoss, self).__init__()
         self.reduction = reduction
-    def forward(self, inputs, targets):
+    def forward(self, inputs, targets, mask):
         # We ignore those whose tarhets == -1.0. 
-        pos_id = (targets==1.0).float()
-        neg_id = (targets==0.0).float()
+        pos_id = (mask==1.0).float()
+        neg_id = (mask==0.0).float()
         pos_loss = pos_id * (inputs - targets)**2
-        neg_loss = neg_id * (inputs - targets)**2
-        pos_num = torch.sum(pos_id, 1)
-        neg_num = torch.sum(neg_id, 1)
+        neg_loss = neg_id * (inputs)**2
         if self.reduction == 'mean':
             pos_loss = torch.mean(torch.sum(pos_loss, 1))
             neg_loss = torch.mean(torch.sum(neg_loss, 1))
@@ -95,14 +91,14 @@ def generate_anchor(input_size, stride, anchor_scale, anchor_aspect):
             total_anchor_size.append([ab_w, ab_h])
     return total_anchor_size
 
-def get_total_anchor_size(multi_scale=False, name='VOC'):
+def get_total_anchor_size(multi_level=False, name='VOC'):
     if name == 'VOC':
-        if multi_scale:
+        if multi_level:
             all_anchor_size = MULTI_ANCHOR_SIZE
         else:
             all_anchor_size = ANCHOR_SIZE
     elif name == 'COCO':
-        if multi_scale:
+        if multi_level:
             all_anchor_size = MULTI_ANCHOR_SIZE_COCO
         else:
             all_anchor_size = ANCHOR_SIZE_COCO
@@ -207,7 +203,7 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
         th = np.log(box_hs / p_h)
         weight = 2.0 - (box_w / w) * (box_h / h)
         
-        result.append([index, grid_x, grid_y, tx, ty, tw, th, weight])
+        result.append([index, grid_x, grid_y, tx, ty, tw, th, weight, xmin, ymin, xmax, ymax])
         
         return result
     
@@ -229,10 +225,10 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
                     th = np.log(box_hs / p_h)
                     weight = 2.0 - (box_w / w) * (box_h / h)
                     
-                    result.append([index, grid_x, grid_y, tx, ty, tw, th, weight])
+                    result.append([index, grid_x, grid_y, tx, ty, tw, th, weight, xmin, ymin, xmax, ymax])
                 else:
                     # we ignore other anchor boxes even if their iou scores all higher than ignore thresh
-                    result.append([index, grid_x, grid_y, 0., 0., 0., 0., -1.0])
+                    result.append([index, grid_x, grid_y, 0., 0., 0., 0., -1.0, 0., 0., 0., 0.])
 
         return result 
 
@@ -264,7 +260,7 @@ def gt_creator(input_size, stride, label_lists, name='VOC'):
     all_anchor_size = get_total_anchor_size(name=name)
     anchor_number = len(all_anchor_size)
 
-    gt_tensor = np.zeros([batch_size, hs, ws, anchor_number, 1+1+4+1])
+    gt_tensor = np.zeros([batch_size, hs, ws, anchor_number, 1+1+4+1+4])
 
     for batch_index in range(batch_size):
         for gt_label in label_lists[batch_index]:
@@ -273,18 +269,19 @@ def gt_creator(input_size, stride, label_lists, name='VOC'):
             results = generate_txtytwth(gt_label, w, h, s, all_anchor_size)
             if results:
                 for result in results:
-                    index, grid_x, grid_y, tx, ty, tw, th, weight = result
+                    index, grid_x, grid_y, tx, ty, tw, th, weight, xmin, ymin, xmax, ymax = result
                     if weight > 0.:
                         if grid_y < gt_tensor.shape[1] and grid_x < gt_tensor.shape[2]:
                             gt_tensor[batch_index, grid_y, grid_x, index, 0] = 1.0
                             gt_tensor[batch_index, grid_y, grid_x, index, 1] = gt_class
-                            gt_tensor[batch_index, grid_y, grid_x, index, 2:-1] = np.array([tx, ty, tw, th])
-                            gt_tensor[batch_index, grid_y, grid_x, index, -1] = weight
+                            gt_tensor[batch_index, grid_y, grid_x, index, 2:6] = np.array([tx, ty, tw, th])
+                            gt_tensor[batch_index, grid_y, grid_x, index, 6] = weight
+                            gt_tensor[batch_index, grid_y, grid_x, index, 7:] = np.array([xmin, ymin, xmax, ymax])
                     else:
                         gt_tensor[batch_index, grid_y, grid_x, index, 0] = -1.0
                         gt_tensor[batch_index, grid_y, grid_x, index, -1] = -1.0
 
-    gt_tensor = gt_tensor.reshape(batch_size, hs * ws * anchor_number, 1+1+4+1)
+    gt_tensor = gt_tensor.reshape(batch_size, hs * ws * anchor_number, 1+1+4+1+4)
 
     return gt_tensor
 
@@ -297,10 +294,10 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
     gt_tensor = []
 
     # generate gt datas
-    all_anchor_size = get_total_anchor_size(multi_scale=True, name=name)
+    all_anchor_size = get_total_anchor_size(multi_level=True, name=name)
     anchor_number = len(all_anchor_size) // num_scale
     for s in strides:
-        gt_tensor.append(np.zeros([batch_size, h//s, w//s, anchor_number, 1+1+4+1]))
+        gt_tensor.append(np.zeros([batch_size, h//s, w//s, anchor_number, 1+1+4+1+4]))
     for batch_index in range(batch_size):
         for gt_label in label_lists[batch_index]:
             # get a bbox coords
@@ -351,6 +348,7 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
                     gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 1] = gt_class
                     gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 2:6] = np.array([tx, ty, tw, th])
                     gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 6] = weight
+                    gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 7:] = np.array([xmin, ymin, xmax, ymax])
             
             else:
                 # There are more than one anchor boxes whose IoU are higher than ignore thresh.
@@ -387,56 +385,84 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
                                 gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 1] = gt_class
                                 gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 2:6] = np.array([tx, ty, tw, th])
                                 gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 6] = weight
+                                gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 7:] = np.array([xmin, ymin, xmax, ymax])
+            
                         else:
                             # we ignore other anchor boxes even if their iou scores are higher than ignore thresh
+                            # s_indx, ab_ind = index // num_scale, index % num_scale
                             s_indx = index // anchor_number
                             ab_ind = index - s_indx * anchor_number
+                            s = strides[s_indx]
+                            c_x_s = c_x / s
+                            c_y_s = c_y / s
+                            grid_x = int(c_x_s)
+                            grid_y = int(c_y_s)
                             gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 0] = -1.0
                             gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, -1] = -1.0
 
-    gt_tensor = [gt.reshape(batch_size, -1, 1+1+4+1) for gt in gt_tensor]
+    gt_tensor = [gt.reshape(batch_size, -1, 1+1+4+1+4) for gt in gt_tensor]
     gt_tensor = np.concatenate(gt_tensor, 1)
     
     return gt_tensor
 
-def loss(pred, label, num_classes, obj=5.0, noobj=1.0, obj_loss_f='mse'):
+def iou_score(bboxes_a, bboxes_b):
+    """
+        bbox_1 : [B*N, 4] = [x1, y1, x2, y2]
+        bbox_2 : [B*N, 4] = [x1, y1, x2, y2]
+    """
+    tl = torch.max(bboxes_a[:, :2], bboxes_b[:, :2])
+    br = torch.min(bboxes_a[:, 2:], bboxes_b[:, 2:])
+    area_a = torch.prod(bboxes_a[:, 2:] - bboxes_a[:, :2], 1)
+    area_b = torch.prod(bboxes_b[:, 2:] - bboxes_b[:, :2], 1)
+
+    en = (tl < br).type(tl.type()).prod(dim=1)
+    area_i = torch.prod(br - tl, 1) * en  # * ((tl < br).all())
+    return area_i / (area_a + area_b - area_i)
+    
+def loss(pred_conf, pred_cls, pred_txtytwth, label, num_classes, obj_loss_f='mse'):
     if obj_loss_f == 'bce':
-        obj_loss_function = BCELoss(reduction='mean') # MSELoss(reduction='mean')
+        # In yolov3, we use bce as conf loss_f
+        conf_loss_function = BCELoss(reduction='mean')
+        obj = 1.0
+        noobj = 1.0
     elif obj_loss_f == 'mse':
-        obj_loss_function = MSELoss(reduction='mean')
-        
+        # In yolov2, we use mse as conf loss_f.
+        conf_loss_function = MSELoss(reduction='mean')
+        obj = 5.0
+        noobj = 1.0
+
     cls_loss_function = nn.CrossEntropyLoss(reduction='none')
     txty_loss_function = nn.BCEWithLogitsLoss(reduction='none')
     twth_loss_function = nn.MSELoss(reduction='none')
 
-    pred_obj = torch.sigmoid(pred[:, :, 0])
-    pred_class = pred[:, :, 1 : 1+num_classes].permute(0, 2, 1)
-    pred_box = pred[:, :, 1+num_classes:]
-
-    pred_box_txty = pred_box[:, :, :2]
-    pred_box_twth = pred_box[:, :, 2:]
+    pred_conf = torch.sigmoid(pred_conf[:, :, 0])
+    pred_cls = pred_cls.permute(0, 2, 1)
+    txty_pred = pred_txtytwth[:, :, :2]
+    twth_pred = pred_txtytwth[:, :, 2:]
         
-
-    gt_obj = label[:, :, 0].float()
-    gt_class = label[:, :, 1].long()
-    gt_box = label[:, :, 2:6].float()
+    gt_conf = label[:, :, 0].float()
+    gt_obj = label[:, :, 1].float()
+    gt_cls = label[:, :, 2].long()
+    gt_txtytwth = label[:, :, 3:-1].float()
     gt_box_scale_weight = label[:, :, -1]
     gt_mask = (gt_box_scale_weight > 0.).float()
 
     # objectness loss
-    pos_loss, neg_loss = obj_loss_function(pred_obj, gt_obj)
-    obj_loss = obj * pos_loss + noobj * neg_loss
+    pos_loss, neg_loss = conf_loss_function(pred_conf, gt_conf, gt_obj)
+    conf_loss = obj * pos_loss + noobj * neg_loss
     
     # class loss
-    class_loss = torch.mean(torch.sum(cls_loss_function(pred_class, gt_class) * gt_mask, 1))
+    cls_loss = torch.mean(torch.sum(cls_loss_function(pred_cls, gt_cls) * gt_mask, 1))
     
     # box loss
-    box_loss_txty = torch.mean(torch.sum(torch.sum(txty_loss_function(pred_box_txty, gt_box[:, :, :2]), 2) * gt_box_scale_weight * gt_mask, 1))
-    box_loss_twth = torch.mean(torch.sum(torch.sum(twth_loss_function(pred_box_twth, gt_box[:, :, 2:]), 2) * gt_box_scale_weight * gt_mask, 1))
+    txty_loss = torch.mean(torch.sum(torch.sum(txty_loss_function(txty_pred, gt_txtytwth[:, :, :2]), 2) * gt_box_scale_weight * gt_mask, 1))
+    twth_loss = torch.mean(torch.sum(torch.sum(twth_loss_function(twth_pred, gt_txtytwth[:, :, 2:]), 2) * gt_box_scale_weight * gt_mask, 1))
 
-    box_loss = box_loss_txty + box_loss_twth
+    txtytwth_loss = txty_loss + twth_loss
 
-    return obj_loss, class_loss, box_loss
+    total_loss = conf_loss + cls_loss + txtytwth_loss
+
+    return conf_loss, cls_loss, txtytwth_loss, total_loss
 
 # IoU and its a series of variants
 def IoU(pred, label):

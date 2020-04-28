@@ -20,7 +20,7 @@ class YOLOv2tiny(nn.Module):
         self.stride = 32
         # init set
         self.grid_cell, self.all_anchor_wh = self.create_grid(input_size)
-        self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
+        self.scale = np.array([[[input_size[1], input_size[0], input_size[1], input_size[0]]]])
         self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
         # backbone darknet-19
@@ -55,7 +55,10 @@ class YOLOv2tiny(nn.Module):
         return grid_xy, anchor_wh
 
     def set_grid(self, input_size):
-        return self.create_grid(input_size)
+        self.input_size = input_size
+        self.grid_cell, self.all_anchor_wh = self.create_grid(input_size)
+        self.scale = np.array([[[input_size[1], input_size[0], input_size[1], input_size[0]]]])
+        self.scale_torch = torch.tensor(self.scale.copy(), device=self.device).float()
 
     def decode_xywh(self, txtytwth_pred):
         """
@@ -74,7 +77,7 @@ class YOLOv2tiny(nn.Module):
 
         return xywh_pred
     
-    def decode_boxes(self, txtytwth_pred):
+    def decode_boxes(self, txtytwth_pred, requires_grad=False):
         """
             Input:
                 txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
@@ -85,7 +88,7 @@ class YOLOv2tiny(nn.Module):
         xywh_pred = self.decode_xywh(txtytwth_pred)
 
         # [center_x, center_y, w, h] -> [xmin, ymin, xmax, ymax]
-        x1y1x2y2_pred = torch.zeros_like(xywh_pred)
+        x1y1x2y2_pred = torch.zeros_like(xywh_pred, requires_grad=requires_grad)
         x1y1x2y2_pred[:, :, 0] = (xywh_pred[:, :, 0] - xywh_pred[:, :, 2] / 2)
         x1y1x2y2_pred[:, :, 1] = (xywh_pred[:, :, 1] - xywh_pred[:, :, 3] / 2)
         x1y1x2y2_pred[:, :, 2] = (xywh_pred[:, :, 0] + xywh_pred[:, :, 2] / 2)
@@ -160,7 +163,7 @@ class YOLOv2tiny(nn.Module):
 
         return bbox_pred, scores, cls_inds
 
-    def forward(self, x):
+    def forward(self, x, target=None):
         # backbone
         _, fp_1, fp_2 = self.backbone(x)
 
@@ -180,9 +183,9 @@ class YOLOv2tiny(nn.Module):
         # [B, anchor_n * C, N, M] -> [B, N, M, anchor_n * C] -> [B, N*M, anchor_n*C]
         prediction = prediction.permute(0, 2, 3, 1).contiguous().view(B, H*W, abC)
 
-        # Divide prediction to obj_pred, txtytwth_pred and cls_pred   
+        # Divide prediction to conf_pred, txtytwth_pred and cls_pred   
         # [B, H*W*anchor_n, 1]
-        obj_pred = prediction[:, :, :1 * self.anchor_number].contiguous().view(B, H*W*self.anchor_number, 1)
+        conf_pred = prediction[:, :, :1 * self.anchor_number].contiguous().view(B, H*W*self.anchor_number, 1)
         # [B, H*W, anchor_n, num_cls]
         cls_pred = prediction[:, :, 1 * self.anchor_number : (1 + self.num_classes) * self.anchor_number].contiguous().view(B, H*W*self.anchor_number, self.num_classes)
         # [B, H*W, anchor_n, 4]
@@ -193,8 +196,8 @@ class YOLOv2tiny(nn.Module):
             txtytwth_pred = txtytwth_pred.view(B, H*W, self.anchor_number, 4)
             with torch.no_grad():
                 # batch size = 1                
-                all_obj = torch.sigmoid(obj_pred)[0]           # 0 is because that these is only 1 batch.
-                all_bbox = torch.clamp(self.decode_boxes(txtytwth_pred)[0] / self.scale_torch, 0., 1.)
+                all_obj = torch.sigmoid(conf_pred)[0]           # 0 is because that these is only 1 batch.
+                all_bbox = torch.clamp((self.decode_boxes(txtytwth_pred) / self.scale_torch)[0], 0., 1.)
                 all_class = (torch.softmax(cls_pred[0, :, :], 1) * all_obj)
                 # separate box pred and class conf
                 all_obj = all_obj.to('cpu').numpy()
@@ -205,7 +208,27 @@ class YOLOv2tiny(nn.Module):
 
                 return bboxes, scores, cls_inds
 
-        txtytwth_pred = txtytwth_pred.view(B, H*W*self.anchor_number, 4)
-        final_prediction = torch.cat([obj_pred, cls_pred, txtytwth_pred], -1)
+        else:
+            txtytwth_pred = txtytwth_pred.view(B, H*W, self.anchor_number, 4)
+            # decode bbox, and remember to cancel its grad since we set iou as the label of objectness.
+            with torch.no_grad():
+                x1y1x2y2_pred = (self.decode_boxes(txtytwth_pred) / self.scale_torch).view(-1, 4)
 
-        return final_prediction
+            txtytwth_pred = txtytwth_pred.view(B, H*W*self.anchor_number, 4)
+
+            x1y1x2y2_gt = target[:, :, 7:].view(-1, 4)
+
+            # compute iou
+            iou = tools.iou_score(x1y1x2y2_pred, x1y1x2y2_gt).view(B, H*W*self.anchor_number, 1)
+            # print(iou.min(), iou.max())
+
+            # we set iou between pred bbox and gt bbox as conf label. 
+            # [obj, cls, txtytwth, x1y1x2y2] -> [conf, obj, cls, txtytwth]
+            target = torch.cat([iou, target[:, :, :7]], dim=2)
+
+            conf_loss, cls_loss, txtytwth_loss, total_loss = tools.loss(pred_conf=conf_pred, pred_cls=cls_pred,
+                                                                        pred_txtytwth=txtytwth_pred,
+                                                                        label=target,
+                                                                        num_classes=self.num_classes)
+
+            return conf_loss, cls_loss, txtytwth_loss, total_loss

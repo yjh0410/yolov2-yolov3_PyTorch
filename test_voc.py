@@ -18,7 +18,7 @@ parser.add_argument('-v', '--version', default='yolo_v2',
                     help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-d', '--dataset', default='VOC',
                     help='VOC or COCO dataset')
-parser.add_argument('--trained_model', default='weights_yolo_v2/yolo_v2_72.2.pth',
+parser.add_argument('--trained_model', default='weight/voc/',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')

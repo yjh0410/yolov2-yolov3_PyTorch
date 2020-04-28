@@ -59,6 +59,8 @@ class COCODataset(Dataset):
         self.min_size = min_size
         self.transform = transform
 
+    def reset_transform(self, transform):
+        self.transform = transform
 
     def __len__(self):
         return len(self.ids)

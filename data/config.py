@@ -23,11 +23,10 @@ IGNORE_THRESH = 0.5
 
 
 # yolo-v2 config
-# I hope you know that higher mAP, not always better results.
 voc_ab = {
     'num_classes': 20,
-    'lr_epoch': (60, 90, 160), # set (150, 200, 250), if you want to get a higher mAP
-    'max_epoch': 160, # set 250, if you want to get a higher mAP
+    'lr_epoch': (150, 200, 250), # (60, 90, 160),
+    'max_epoch': 250,
     'min_dim': [416, 416],
     'ms_channels':[128, 256, 512],
     'stride': 32,
@@ -41,8 +40,8 @@ voc_ab = {
 
 coco_ab = {
     'num_classes': 80,
-    'lr_epoch': (60, 90, 160), # set (150, 200, 250), if you want to get a higher mAP
-    'max_epoch': 160, # set 250, if you want to get a higher mAP
+    'lr_epoch': (80, 120, 160),
+    'max_epoch': 160,
     'min_dim': [416, 416],
     'ms_channels':[128, 256, 512],
     'stride': 32,

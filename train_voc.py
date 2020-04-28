@@ -29,10 +29,6 @@ def parse_args():
                         help='Batch size for training')
     parser.add_argument('--lr', default=1e-3, type=float, 
                         help='initial learning rate')
-    parser.add_argument('--obj', default=5.0, type=float,
-                        help='the weight of obj loss')
-    parser.add_argument('--noobj', default=1.0, type=float,
-                        help='the weight of noobj loss')
     parser.add_argument('-cos', '--cos', action='store_true', default=False,
                         help='use cos lr')
     parser.add_argument('-no_wp', '--no_warm_up', action='store_true', default=False,
@@ -49,7 +45,7 @@ def parse_args():
                         help='Weight decay for SGD')
     parser.add_argument('--gamma', default=0.1, type=float, 
                         help='Gamma update for SGD')
-    parser.add_argument('--num_workers', default=8, type=int, 
+    parser.add_argument('--num_workers', default=0, type=int, 
                         help='Number of workers used in dataloading')
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='use cuda.')
@@ -91,33 +87,44 @@ def train():
     else:
         device = torch.device("cpu")
 
+    # use multi-scale trick
+    if args.multi_scale:
+        print('use multi-scale trick.')
+        ms_inds = range(len(cfg['multi_scale']))
+        input_size = [608, 608]
+        dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation([608, 608], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
+
+    else:
+        input_size = cfg['min_dim']
+        dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation(cfg['min_dim'], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
+
     # build model
     if args.version == 'yolo_v2':
         from models.yolo_v2 import myYOLOv2
         total_anchor_size = tools.get_total_anchor_size()
     
-        yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = myYOLOv2(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v2 on the VOC0712 dataset ......')
 
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
-        total_anchor_size = tools.get_total_anchor_size(multi_scale=True)
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True)
         
-        yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = myYOLOv3(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v3 on the VOC0712 dataset ......')
 
     elif args.version == 'tiny_yolo_v2':
         from models.tiny_yolo_v2 import YOLOv2tiny
         total_anchor_size = tools.get_total_anchor_size()
     
-        yolo_net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = YOLOv2tiny(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v2 on the VOC0712 dataset ......')
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
-        total_anchor_size = tools.get_total_anchor_size(multi_scale=True)
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True)
     
-        yolo_net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        yolo_net = YOLOv3tiny(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v3 on the VOC0712 dataset ......')
 
     else:
@@ -129,15 +136,6 @@ def train():
         print('finetune COCO trained ')
         yolo_net.load_state_dict(torch.load(args.resume, map_location=device), strict=False)
 
-
-    # use multi-scale trick
-    if args.multi_scale:
-        print('use multi-scale trick.')
-        ms_inds = range(len(cfg['multi_scale']))
-        dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation([608, 608], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
-
-    else:
-        dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation(cfg['min_dim'], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
 
     # use tfboard
     if args.tfboard:
@@ -163,11 +161,8 @@ def train():
     print("Let's train OD network !")
     print('Training on:', dataset.name)
     print('The dataset size:', len(dataset))
-    print('The obj weight : ', args.obj)
-    print('The noobj weight : ', args.noobj)
     print("----------------------------------------------------------")
 
-    input_size = cfg['min_dim']
     epoch_size = len(dataset) // args.batch_size
     max_epoch = cfg['max_epoch']
 
@@ -209,16 +204,6 @@ def train():
                     tmp_lr = base_lr
                     set_lr(optimizer, tmp_lr)
                     
-            
-            # multi-scale trick
-            if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
-                ms_ind = random.sample(ms_inds, 1)[0]
-                input_size = cfg['multi_scale'][int(ms_ind)]
-            
-            # multi scale
-            if args.multi_scale:
-                images = torch.nn.functional.interpolate(images, size=input_size, mode='bilinear', align_corners=True)
-
             targets = [label.tolist() for label in targets]
 
             # make train label
@@ -231,16 +216,9 @@ def train():
             images = images.to(device)
             targets = torch.tensor(targets).float().to(device)
 
-            # forward
-            out = model(images)
+            # forward and loss
+            conf_loss, cls_loss, txtytwth_loss, total_loss = model(images, target=targets)
                      
-            # compute loss
-            obj_loss, class_loss, box_loss = tools.loss(out, targets, num_classes=args.num_classes, 
-                                                        obj=args.obj,
-                                                        noobj=args.noobj)
-
-            total_loss = obj_loss + class_loss + box_loss
-
             # backprop and update
             total_loss.backward()
             optimizer.step()
@@ -249,18 +227,29 @@ def train():
             if iter_i % 10 == 0:
                 if args.tfboard:
                     # viz loss
-                    writer.add_scalar('object loss', obj_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('class loss', class_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('local loss', box_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('object loss', conf_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('class loss', cls_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('local loss', txtytwth_loss.item(), iter_i + epoch * epoch_size)
                 
                 t1 = time.time()
                 print('[Epoch %d/%d][Iter %d/%d][lr %.6f]'
                     '[Loss: obj %.2f || cls %.2f || bbox %.2f || total %.2f || size %d || time: %.2f]'
                         % (epoch+1, max_epoch, iter_i, epoch_size, tmp_lr,
-                            obj_loss.item(), class_loss.item(), box_loss.item(), total_loss.item(), input_size[0], t1-t0),
+                            conf_loss.item(), cls_loss.item(), txtytwth_loss.item(), total_loss.item(), input_size[0], t1-t0),
                         flush=True)
 
                 t0 = time.time()
+
+            # multi-scale trick
+            if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
+                ms_ind = random.sample(ms_inds, 1)[0]
+                input_size = cfg['multi_scale'][int(ms_ind)]
+                model.set_grid(input_size)
+
+                # change input dim
+                # But this operation will report bugs when we use more workers in data loader, so I have to use 0 workers.
+                # I don't know how to make it suit more workers, and I'm trying to solve this question.
+                data_loader.dataset.reset_transform(SSDAugmentation(input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
 
         if (epoch + 1) % 10 == 0:
             print('Saving state, epoch:', epoch + 1)

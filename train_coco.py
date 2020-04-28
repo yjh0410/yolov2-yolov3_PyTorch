@@ -3,7 +3,6 @@ from __future__ import division
 from utils.cocoapi_evaluator import COCOAPIEvaluator
 from data import *
 from utils.augmentations import SSDAugmentation
-from utils import get_device
 from data.cocodataset import *
 import tools
 
@@ -35,17 +34,13 @@ def parse_args():
                         help='Batch size for training')
     parser.add_argument('--lr', default=1e-3, type=float, 
                         help='initial learning rate')
-    parser.add_argument('--obj', default=5.0, type=float,
-                        help='the weight of obj loss')
-    parser.add_argument('--noobj', default=1.0, type=float,
-                        help='the weight of noobj loss')
     parser.add_argument('-cos', '--cos', action='store_true', default=False,
                         help='use cos lr')
     parser.add_argument('-no_wp', '--no_warm_up', action='store_true', default=False,
                         help='yes or no to choose using warmup strategy to train')
     parser.add_argument('--wp_epoch', type=int, default=2,
                         help='The upper bound of warm-up')
-    parser.add_argument('--dataset_root', default='./data/COCO/', 
+    parser.add_argument('--dataset_root', default='/home/k303/object-detection/dataset/COCO/', 
                         help='Location of VOC root directory')
     parser.add_argument('--num_classes', default=80, type=int, 
                         help='The number of dataset classes')
@@ -55,7 +50,7 @@ def parse_args():
                         help='Weight decay for SGD')
     parser.add_argument('--gamma', default=0.1, type=float, 
                         help='Gamma update for SGD')
-    parser.add_argument('--n_cpu', default=8, type=int, 
+    parser.add_argument('--num_workers', default=0, type=int, 
                         help='Number of workers used in dataloading')
     parser.add_argument('--eval_epoch', type=int,
                             default=10, help='interval between evaluations')
@@ -65,7 +60,7 @@ def parse_args():
                         help='use tensorboard')
     parser.add_argument('--debug', action='store_true', default=False,
                         help='debug mode where only one image is trained')
-    parser.add_argument('--save_folder', default='weights_yolo_v2/coco/', type=str, 
+    parser.add_argument('--save_folder', default='weights/coco/', type=str, 
                         help='Gamma update for SGD')
 
     return parser.parse_args()
@@ -92,61 +87,62 @@ def train():
     else:
         device = torch.device("cpu")
 
-    # build model
-    if args.version == 'yolo_v2':
-        from models.yolo_v2 import myYOLOv2
-        total_anchor_size = tools.get_total_anchor_size(name='COCO')
-    
-        yolo_net = myYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
-        print('Let us train yolo-v2 on the COCO dataset ......')
-
-    elif args.version == 'yolo_v3':
-        from models.yolo_v3 import myYOLOv3
-        total_anchor_size = tools.get_total_anchor_size(multi_scale=True, name='COCO')
-        
-        yolo_net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
-        print('Let us train yolo-v3 on the COCO dataset ......')
-
-    elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import YOLOv2tiny
-        total_anchor_size = tools.get_total_anchor_size(name='COCO')
-    
-        yolo_net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
-        print('Let us train tiny-yolo-v2 on the COCO dataset ......')
-
-    elif args.version == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import YOLOv3tiny
-        total_anchor_size = tools.get_total_anchor_size(multi_scale=True, name='COCO')
-    
-        yolo_net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
-        print('Let us train tiny-yolo-v3 on the COCO dataset ......')
-
-    else:
-        print('Unknown version !!!')
-        exit()
-
     if args.multi_scale:
         print('Let us use the multi-scale trick.')
         ms_inds = range(len(cfg['multi_scale']))
+        input_size = [608, 608]
         dataset = COCODataset(
                     data_dir=data_dir,
                     img_size=608,
                     transform=SSDAugmentation([608, 608], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
                     debug=args.debug)
     else:
+        input_size = cfg['min_dim']
         dataset = COCODataset(
                     data_dir=data_dir,
                     img_size=cfg['min_dim'][0],
                     transform=SSDAugmentation(cfg['min_dim'], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
                     debug=args.debug)
+
+    # build model
+    if args.version == 'yolo_v2':
+        from models.yolo_v2 import myYOLOv2
+        total_anchor_size = tools.get_total_anchor_size(name='COCO')
+    
+        yolo_net = myYOLOv2(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train yolo-v2 on the COCO dataset ......')
+
+    elif args.version == 'yolo_v3':
+        from models.yolo_v3 import myYOLOv3
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True, name='COCO')
+        
+        yolo_net = myYOLOv3(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train yolo-v3 on the COCO dataset ......')
+
+    elif args.version == 'tiny_yolo_v2':
+        from models.tiny_yolo_v2 import YOLOv2tiny
+        total_anchor_size = tools.get_total_anchor_size(name='COCO')
+    
+        yolo_net = YOLOv2tiny(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train tiny-yolo-v2 on the COCO dataset ......')
+
+    elif args.version == 'tiny_yolo_v3':
+        from models.tiny_yolo_v3 import YOLOv3tiny
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True, name='COCO')
+    
+        yolo_net = YOLOv3tiny(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train tiny-yolo-v3 on the COCO dataset ......')
+
+    else:
+        print('Unknown version !!!')
+        exit()
+
     
     print("Setting Arguments.. : ", args)
     print("----------------------------------------------------------")
     print('Loading the MSCOCO dataset...')
     print('Training model on:', dataset.name)
     print('The dataset size:', len(dataset))
-    print('The obj weight : ', args.obj)
-    print('The noobj weight : ', args.noobj)
     print("----------------------------------------------------------")
 
 
@@ -171,7 +167,7 @@ def train():
                     batch_size=args.batch_size, 
                     shuffle=True, 
                     collate_fn=detection_collate,
-                    num_workers=args.n_cpu)
+                    num_workers=args.num_workers)
 
     evaluator = COCOAPIEvaluator(
                     data_dir=data_dir,
@@ -185,7 +181,6 @@ def train():
     tmp_lr = base_lr
     optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
 
-    input_size = cfg['min_dim']
     max_epoch = cfg['max_epoch']
     epoch_size = len(dataset) // args.batch_size
 
@@ -234,14 +229,6 @@ def train():
                     tmp_lr = base_lr
                     set_lr(optimizer, tmp_lr)
         
-            # multi-scale trick
-            if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
-                ms_ind = random.sample(ms_inds, 1)[0]
-                input_size = cfg['multi_scale'][int(ms_ind)]
-            
-            # multi scale
-            if args.multi_scale:
-                images = torch.nn.functional.interpolate(images, size=input_size, mode='bilinear', align_corners=True)
 
             targets = [label.tolist() for label in targets]
             if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
@@ -249,16 +236,12 @@ def train():
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
                 targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, name='COCO')
 
+            # to device
+            images = images.to(device)
             targets = torch.tensor(targets).float().to(device)
 
-            out = model(images.to(device))
-
-
-            obj_loss, class_loss, box_loss = tools.loss(out, targets, num_classes=args.num_classes, 
-                                                        obj=args.obj,
-                                                        noobj=args.noobj)
-
-            total_loss = obj_loss + class_loss + box_loss
+            # forward and loss
+            conf_loss, cls_loss, txtytwth_loss, total_loss = model(images, target=targets)
 
             # backprop
             total_loss.backward()        
@@ -268,18 +251,29 @@ def train():
             if iter_i % 10 == 0:
                 if args.tfboard:
                     # viz loss
-                    writer.add_scalar('object loss', obj_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('class loss', class_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('local loss', box_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('object loss', conf_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('class loss', cls_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('local loss', txtytwth_loss.item(), iter_i + epoch * epoch_size)
                 
                 t1 = time.time()
                 print('[Epoch %d/%d][Iter %d/%d][lr %.6f]'
                     '[Loss: obj %.2f || cls %.2f || bbox %.2f || total %.2f || size %d || time: %.2f]'
                         % (epoch+1, max_epoch, iter_i, epoch_size, tmp_lr,
-                            obj_loss.item(), class_loss.item(), box_loss.item(), total_loss.item(), input_size[0], t1-t0),
+                            conf_loss.item(), cls_loss.item(), txtytwth_loss.item(), total_loss.item(), input_size[0], t1-t0),
                         flush=True)
 
                 t0 = time.time()
+
+            # multi-scale trick
+            if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
+                ms_ind = random.sample(ms_inds, 1)[0]
+                input_size = cfg['multi_scale'][int(ms_ind)]
+                model.set_grid(input_size)
+
+                # change input dim
+                # But this operation will report bugs when we use more workers in data loader, so I have to use 0 workers.
+                # I don't know how to make it suit more workers, and I'm trying to solve this question.
+                dataloader.dataset.reset_transform(SSDAugmentation(input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
 
 
         if (epoch + 1) % 10 == 0:

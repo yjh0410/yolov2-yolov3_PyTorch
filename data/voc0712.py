@@ -27,7 +27,7 @@ VOC_CLASSES = (  # always index 0
 path_to_dir = osp.dirname(osp.abspath(__file__))
 VOC_ROOT = path_to_dir + "/VOCdevkit/"
 
-VOC_ROOT = 'E:/python_work/OD/yolo-guide/data/VOCdevkit/'
+VOC_ROOT = "/home/k303/object-detection/dataset/VOCdevkit/"
 
 
 class VOCAnnotationTransform(object):
@@ -121,6 +121,9 @@ class VOCDetection(data.Dataset):
     def __len__(self):
         return len(self.ids)
 
+    def reset_transform(self, transform):
+        self.transform = transform
+
     def pull_item(self, index):
         img_id = self.ids[index]
 
@@ -132,6 +135,7 @@ class VOCDetection(data.Dataset):
             target = self.target_transform(target, width, height)
 
         if self.transform is not None:
+
             target = np.array(target)
             img, boxes, labels = self.transform(img, target[:, :4], target[:, 4])
             # to rgb

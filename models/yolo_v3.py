@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from utils import Conv2d
 from backbone import *
 import numpy as np
+import tools
 
 class myYOLOv3(nn.Module):
     def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.50, anchor_size=None, hr=False):
@@ -19,7 +20,7 @@ class myYOLOv3(nn.Module):
         self.anchor_number = self.anchor_size.size(1)
 
         self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid(input_size)
-        self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
+        self.scale = np.array([[[input_size[1], input_size[0], input_size[1], input_size[0]]]])
         self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
         # backbone darknet-53 (optional: darknet-19)
@@ -89,7 +90,9 @@ class myYOLOv3(nn.Module):
         return total_grid_xy, total_stride, total_anchor_wh
 
     def set_grid(self, input_size):
-        return self.create_grid(input_size)
+        self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid(input_size)
+        self.scale = np.array([[[input_size[1], input_size[0], input_size[1], input_size[0]]]])
+        self.scale_torch = torch.tensor(self.scale.copy(), device=self.device).float()
 
     def decode_xywh(self, txtytwth_pred):
         """
@@ -198,7 +201,7 @@ class myYOLOv3(nn.Module):
 
         return bbox_pred, scores, cls_inds
 
-    def forward(self, x):
+    def forward(self, x, target=None):
         # backbone
         fmp_1, fmp_2, fmp_3 = self.backbone(x)
 
@@ -228,7 +231,7 @@ class myYOLOv3(nn.Module):
         pred_1 = self.pred_1(fmp_1)
 
         preds = [pred_1, pred_2, pred_3]
-        total_obj_pred = []
+        total_conf_pred = []
         total_cls_pred = []
         total_txtytwth_pred = []
         B = HW = 0
@@ -240,19 +243,19 @@ class myYOLOv3(nn.Module):
 
             # Divide prediction to obj_pred, xywh_pred and cls_pred   
             # [B, H*W*anchor_n, 1]
-            obj_pred = pred[:, :, :1 * self.anchor_number].contiguous().view(B_, H_*W_*self.anchor_number, 1)
+            conf_pred = pred[:, :, :1 * self.anchor_number].contiguous().view(B_, H_*W_*self.anchor_number, 1)
             # [B, H*W*anchor_n, num_cls]
             cls_pred = pred[:, :, 1 * self.anchor_number : (1 + self.num_classes) * self.anchor_number].contiguous().view(B_, H_*W_*self.anchor_number, self.num_classes)
             # [B, H*W*anchor_n, 4]
             txtytwth_pred = pred[:, :, (1 + self.num_classes) * self.anchor_number:].contiguous()
 
-            total_obj_pred.append(obj_pred)
+            total_conf_pred.append(conf_pred)
             total_cls_pred.append(cls_pred)
             total_txtytwth_pred.append(txtytwth_pred)
             B = B_
             HW += H_*W_
         
-        obj_pred = torch.cat(total_obj_pred, 1)
+        conf_pred = torch.cat(total_conf_pred, 1)
         cls_pred = torch.cat(total_cls_pred, 1)
         txtytwth_pred = torch.cat(total_txtytwth_pred, 1)
 
@@ -261,8 +264,8 @@ class myYOLOv3(nn.Module):
             txtytwth_pred = txtytwth_pred.view(B, HW, self.anchor_number, 4)
             with torch.no_grad():
                 # batch size = 1                
-                all_obj = torch.sigmoid(obj_pred)[0]           # 0 is because that these is only 1 batch.
-                all_bbox = torch.clamp(self.decode_boxes(txtytwth_pred)[0] / self.scale_torch, 0., 1.)
+                all_obj = torch.sigmoid(conf_pred)[0]           # 0 is because that these is only 1 batch.
+                all_bbox = torch.clamp((self.decode_boxes(txtytwth_pred) / self.scale_torch)[0], 0., 1.)
                 all_class = (torch.softmax(cls_pred[0, :, :], dim=1) * all_obj)
                 # separate box pred and class conf
                 all_obj = all_obj.to('cpu').numpy()
@@ -274,7 +277,28 @@ class myYOLOv3(nn.Module):
                 # print(len(all_boxes))
                 return bboxes, scores, cls_inds
 
-        txtytwth_pred = txtytwth_pred.view(B, -1, 4)
-        final_prediction = torch.cat([obj_pred, cls_pred, txtytwth_pred], -1)
+        else:
+            txtytwth_pred = txtytwth_pred.view(B, HW, self.anchor_number, 4)
+            # decode bbox, and remember to cancel its grad since we set iou as the label of objectness.
+            with torch.no_grad():
+                x1y1x2y2_pred = (self.decode_boxes(txtytwth_pred) / self.scale_torch).view(-1, 4)
 
-        return final_prediction
+            txtytwth_pred = txtytwth_pred.view(B, -1, 4)
+
+            x1y1x2y2_gt = target[:, :, 7:].view(-1, 4)
+
+            # compute iou
+            iou = tools.iou_score(x1y1x2y2_pred, x1y1x2y2_gt).view(B, -1, 1)
+            # print(iou.min(), iou.max())
+
+            # we set iou between pred bbox and gt bbox as conf label. 
+            # [obj, cls, txtytwth, x1y1x2y2] -> [conf, obj, cls, txtytwth]
+            target = torch.cat([iou, target[:, :, :7]], dim=2)
+
+            conf_loss, cls_loss, txtytwth_loss, total_loss = tools.loss(pred_conf=conf_pred, pred_cls=cls_pred,
+                                                                        pred_txtytwth=txtytwth_pred,
+                                                                        label=target,
+                                                                        num_classes=self.num_classes,
+                                                                        obj_loss_f='bce')
+
+            return conf_loss, cls_loss, txtytwth_loss, total_loss

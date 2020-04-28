@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from data.cocodataset import *
 from data import config, BaseTransform, VOCAnnotationTransform, VOCDetection, VOC_ROOT, VOC_CLASSES
-from utils import get_device
 import numpy as np
 import cv2
 import time
@@ -23,6 +22,8 @@ parser.add_argument('--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
 parser.add_argument('--dataset_root', default='./data/COCO/', 
                     help='Location of VOC root directory')
+parser.add_argument('--cuda', action='store_true', default=False,
+                    help='use cuda.')
 parser.add_argument('-f', default=None, type=str, 
                     help="Dummy arg so we can load in Jupyter Notebooks")
 parser.add_argument('--debug', action='store_true', default=False,
@@ -95,7 +96,12 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
 
 def test():
     # get device
-    device = get_device(0)
+    if args.cuda:
+        print('use cuda')
+        cudnn.benchmark = True
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
 
     # load net
     num_classes = 80
