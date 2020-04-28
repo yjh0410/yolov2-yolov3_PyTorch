@@ -1,19 +1,17 @@
 # the whole project
-In this project, you can enjoy yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3. What I have to say is that I don't try to 100% reproduce official YOLO, because it is really difficult and I have not much computation resource. Therefore, I did some simplification. For example:
+In this project, you can enjoy yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3. What I have to say is that I don't try to 100% reproduce official YOLO, because it is really difficult and I have not much computation resource. 
 
-For objectness, official YOLO firstly computes iou between all predicting bboxes and groundtruth bboxes, then pick up the one whose iou is the largest and set the learning target of objectness as the iou value. But what I do is to set objectness target as 1 if there is a object, otherwise 0. My method is really easy, right? I'm so lazy. HAHA!
+Recently, I made some improvement, and my yolo project is very close to official yolo models.
 
-To get a higher mAP, I add more epochs(total 250 epochs) to train my model. But I find there is something wrong when I visualize detection results. With 250 epochs, my yolo-v2 can get 75.2 mAP while it only gets 73.6 mAP with 160 epoch. However 250epoch model has a worse visualization results. I'm so confused……
+For now, my yolo-v2 gets 76.0 mAP with 416 input size. I set batchsize as 20, and I train yolo-v2 with 160 epoch same to official yolo-v2.
 
-Therefore, I have a qeustion: Is the mAP metric really good? Does it really suit object detection?
+To get a higher mAP, I add more epochs(total 250 epochs) to train my model. The model is being trained. And my yolo-v3, too.
 
-In a word, this project is an exercise, and I prefer to call it a lazy version of YOLO. HAHA!! If you guys are interested in the authentic YOLO reproduced by PyTorch, this project might not suit you. 
+I will upload the new model again. Just hold on~
 
-# tiny-yolo-v2 and tiny-yolo-v3
-Good news again !!!
+However, I have a qeustion: Is the mAP metric really good? Does it really suit object detection?
 
-In this update, I add tiny-yolo-v2 and tiny-yolo-v3 that are both designed by myself. My tiny-yolo-v2 gets 61.6 mAP and 117 FPS on a GTX-1660ti GPU and tiny-yolo-v3 gets 71.3 mAP and 62.5 FPS on a GTX-1660ti GPU. There is nothing new but just tiny.
-So, have fun !
+I find higher mAP doesn't mean better visualization...so weird.
 
 # pytorch-yolo-v3
 Good news !!!
@@ -29,25 +27,13 @@ But !! I don't plan to one hundred percent reproduce it, so my own yolo-v2 is a 
 
 It is known to us that reproducing the model is easy while it is hard to reproduce the results shown in the paper.
 
-As the Chinese new years(2020-1-24) is comming, I have no more energy to adjust my yolo-v2 which means my model can't get the same result as origin yolo-v2 (76.8 mAP with 416 and 78.6 with 544). If you really care about this point, my project can't satisfy you. And there are many other excellent projects reproducing origin yolo-v2, so just consider to clone them and try on your task.
-
 Before I tell you guys how to use this project, I must say something about difference between origin yolo-v2 and mine:
-
-- For objectness, I just regard it as a 0-1 bernoulli distribution (Origin yolo-v2 set IoU as the objectness label.). If there is an object, the label is 1, else it is 0. And the model uses sigmoid function and MSE loss function.
 
 - For class prediction, I use cross-entropy funtion while origin yolo-v2 used MSE to regression it. I really can't understand why it used MSE for class. If anyone knows that, please tell me. Thanks a lot!
 
 - For data augmentation, I copy the augmentation codes from the https://github.com/amdegroot/ssd.pytorch which is a superb project reproducing the SSD. If anyone is interested in SSD, just clone it to learn !(Don't forget to star it !)
 
-My yolo-v2 got 75.2 mAP with 416 input size, lower than origin yolo-v2 that got 76.8% mAP with the same image size. With 608 input size, my yolo-v2 gets 77.2 mAP. This is maybe because that there are two tricks that didn't work:
-
-1. hi-res classifier
-
-The darknet19-448 has been trained and got 75.52 top-1 acc. But it doesn't bring any improvement for my model.
-
-2. multi-scale train
-
-It doesn't work, too. Although it does make my model robust to more input size (from 320 to 608), it didn't bring any increase on mAP with 416 resolution.
+My yolo-v2 got 76.0 mAP with 416 input size, lower than origin yolo-v2 that got 76.8% mAP with the same image size. Otherwise, I find the multi-scale trick doesn't always work...
 
 My loss function and groundtruth creator both in the ```tools.py```, and you can try to change some parameters to improve the model.
 
