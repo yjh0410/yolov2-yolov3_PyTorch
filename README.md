@@ -32,6 +32,8 @@ I really enjoy yolo. It is so amazing! So I try to reproduce it. And I think I a
 With 160 training epochs, my yolo-v2 only gets 76.0 mAP with 416 input size and 77.0 mAP with 544 input size. To be better, I add another 90 epochs.
 With 250 training epochs, my yolo-v2 performs very well !
 
+During testing stage, I set conf thresh as 0.001 and set nms thresh as 0.5 to obtain above results. To make my model faster, I set conf thresh as 0.01. With this higher conf thresh, my yolo-v2 still performs very well and gets 77.0 mAP with 416 input size and 78.0 mAP with 544 input size.
+
 ## Tricks
 Tricks in official paper:
 - [x] batch norm
