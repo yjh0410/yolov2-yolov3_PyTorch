@@ -3,10 +3,6 @@ In this project, you can enjoy yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3. 
 
 Recently, I made some improvement, and my yolo project is very close to official yolo models.
 
-For now, my yolo-v2 gets 76.0 mAP with 416 input size. I set batchsize as 20, and I train yolo-v2 with 160 epoch same to official yolo-v2.
-
-To get a higher mAP, I add more epochs(total 250 epochs) to train my model. The model is being trained. And my yolo-v3, too.
-
 I will upload the new model again. Just hold on~
 
 However, I have a qeustion: Is the mAP metric really good? Does it really suit object detection?
@@ -16,32 +12,53 @@ I find higher mAP doesn't mean better visualization...so weird.
 # pytorch-yolo-v3
 Good news !!!
 
-In this update, I add yolo-v3 model which gets 81.0 mAP ( with 416 input, and no multi-scale training trick ) on VOC2007-test. For more details, you could see code files including ```models/yolo_v3.py``` and ```tools.py```.
+In this update, I add yolo-v3 model. For more details, you could see code files including ```models/yolo_v3.py``` and ```tools.py```.
 
-In addition, you can replace darknet-53 with darknet-19 as the backbone of yolo-v3, and this model can get 78.6 mAP on VOC2007-test.
+Recently, I made some improvement, and my yolo-v3 is being closer and closer to official yolo-v3.
+
+The new model is being trained, and I will upload it in time. Just hold on~
+
+In addition, you can replace darknet-53 with darknet-19 as the backbone of yolo-v3.
 
 # pytorch-yolo-v2
-I really enjoy yolo. It is so amazing! So I try to reproduce it. And I almost got it!
+I really enjoy yolo. It is so amazing! So I try to reproduce it. And I think I achieve this goal:
 
-But !! I don't plan to one hundred percent reproduce it, so my own yolo-v2 is a little different with origin version. Because all the tricks used in yolo-v2 may not ne suitable for other tasks. 
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch) </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> VOC07 test</th><td bgcolor=white> 416 </td><td bgcolor=white> 76.8 </td><td bgcolor=white> 77.1 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> VOC07 test</th><td bgcolor=white> 544 </td><td bgcolor=white> 78.6 </td><td bgcolor=white> 78.1 </td></tr>
+</table></tbody>
 
-It is known to us that reproducing the model is easy while it is hard to reproduce the results shown in the paper.
 
-Before I tell you guys how to use this project, I must say something about difference between origin yolo-v2 and mine:
+## Tricks
+Tricks in official paper:
+- [x] batch norm
+- [x] hi-res classifier
+- [x] convolutional
+- [x] anchor boxes
+- [x] new network
+- [x] dimension priors
+- [x] location prediction
+- [x] passthrough
+- [x] multi-scale
+- [x] hi-red detector
 
-- For class prediction, I use cross-entropy funtion while origin yolo-v2 used MSE to regression it. I really can't understand why it used MSE for class. If anyone knows that, please tell me. Thanks a lot!
+In TITAN Xp, my yolo-v2 runs at 100+ FPS, so it's very fast. I have no any TITAN X GPU, and I can't run my model in a X GPU. Sorry, guys~
+
+Before I tell you how to use this project, I must say one important thing about difference between origin yolo-v2 and mine:
 
 - For data augmentation, I copy the augmentation codes from the https://github.com/amdegroot/ssd.pytorch which is a superb project reproducing the SSD. If anyone is interested in SSD, just clone it to learn !(Don't forget to star it !)
 
-My yolo-v2 got 76.0 mAP with 416 input size, lower than origin yolo-v2 that got 76.8% mAP with the same image size. Otherwise, I find the multi-scale trick doesn't always work...
+So I don't write data augmentation by myself. I'm a little lazy~~
 
-My loss function and groundtruth creator both in the ```tools.py```, and you can try to change some parameters to improve the model.
+My loss function and groundtruth creator both in the ```tools.py```, and you can try to change any parameters to improve the model.
 
+Next, I plan to train my yolo-v2 on COCO.
 
 ## Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
 - Tensorboard 1.14.
-- python-opencv, python3.6/3.7
+- opencv-python, python3.6/3.7
 
 ## Dataset
 As for now, I only train and test on PASCAL VOC2007 and 2012. 
@@ -82,10 +99,12 @@ Just run data/scripts/COCO2017.sh
 ## Train
 To run:
 ```Shell
-python train_voc.py
+python train_voc.py -v yolo_v2 -hr -ms --cuda
 ```
 
-You can run ```python train_voc.py -h``` to check all optional argument
+You can run ```python train_voc.py -h``` to check all optional argument.
+
+By default, I set num_workers in pytorch dataloader as 0 to guarantee my multi-scale trick. But the trick can't work when I add more wokers. I know little about multithreading. So sad...
 
 ## Test
 To run:
