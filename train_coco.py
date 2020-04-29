@@ -38,7 +38,7 @@ def parse_args():
                         help='use cos lr')
     parser.add_argument('-no_wp', '--no_warm_up', action='store_true', default=False,
                         help='yes or no to choose using warmup strategy to train')
-    parser.add_argument('--wp_epoch', type=int, default=2,
+    parser.add_argument('--wp_epoch', type=int, default=4,
                         help='The upper bound of warm-up')
     parser.add_argument('--dataset_root', default='/home/k303/object-detection/dataset/COCO/', 
                         help='Location of VOC root directory')
@@ -89,7 +89,6 @@ def train():
 
     if args.multi_scale:
         print('Let us use the multi-scale trick.')
-        ms_inds = range(len(cfg['multi_scale']))
         input_size = [608, 608]
         dataset = COCODataset(
                     data_dir=data_dir,
@@ -151,7 +150,7 @@ def train():
         print('use tensorboard')
         from torch.utils.tensorboard import SummaryWriter
         c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        log_path = os.path.join('log/voc/', args.version, c_time)
+        log_path = os.path.join('log/coco/', args.version, c_time)
         os.makedirs(log_path, exist_ok=True)
 
         writer = SummaryWriter(log_path)
@@ -179,7 +178,8 @@ def train():
     # optimizer setup
     base_lr = args.lr
     tmp_lr = base_lr
-    optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
+    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum,
+                                            weight_decay=args.weight_decay)
 
     max_epoch = cfg['max_epoch']
     epoch_size = len(dataset) // args.batch_size
@@ -221,8 +221,8 @@ def train():
             # WarmUp strategy for learning rate
             if not args.no_warm_up:
                 if epoch < args.wp_epoch:
-                    tmp_lr = base_lr * pow((iter_i+epoch*epoch_size)*1. / (args.wp_epoch*epoch_size), 4)
-                    # tmp_lr = 1e-6 + (base_lr-1e-6) * (iter_i+epoch*epoch_size) / (epoch_size * (args.wp_epoch))
+                    # tmp_lr = base_lr * pow((iter_i+epoch*epoch_size)*1. / (args.wp_epoch*epoch_size), 4)
+                    tmp_lr = 1e-6 + (base_lr-1e-6) * (iter_i+epoch*epoch_size) / (epoch_size * (args.wp_epoch))
                     set_lr(optimizer, tmp_lr)
 
                 elif epoch == args.wp_epoch and iter_i == 0:
@@ -236,6 +236,7 @@ def train():
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
                 targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, name='COCO')
 
+
             # to device
             images = images.to(device)
             targets = torch.tensor(targets).float().to(device)
@@ -248,12 +249,13 @@ def train():
             optimizer.step()
             optimizer.zero_grad()
 
+            if args.tfboard:
+                # viz loss
+                writer.add_scalar('object loss', conf_loss.item(), iter_i + epoch * epoch_size)
+                writer.add_scalar('class loss', cls_loss.item(), iter_i + epoch * epoch_size)
+                writer.add_scalar('local loss', txtytwth_loss.item(), iter_i + epoch * epoch_size)
+
             if iter_i % 10 == 0:
-                if args.tfboard:
-                    # viz loss
-                    writer.add_scalar('object loss', conf_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('class loss', cls_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('local loss', txtytwth_loss.item(), iter_i + epoch * epoch_size)
                 
                 t1 = time.time()
                 print('[Epoch %d/%d][Iter %d/%d][lr %.6f]'
@@ -266,8 +268,10 @@ def train():
 
             # multi-scale trick
             if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
-                ms_ind = random.sample(ms_inds, 1)[0]
-                input_size = cfg['multi_scale'][int(ms_ind)]
+                # ms_ind = random.sample(ms_inds, 1)[0]
+                # input_size = cfg['multi_scale'][int(ms_ind)]
+                size = random.randint(10, 19) * 32
+                input_size = [size, size]
                 model.set_grid(input_size)
 
                 # change input dim
