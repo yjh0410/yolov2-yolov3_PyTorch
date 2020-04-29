@@ -29,6 +29,8 @@ I really enjoy yolo. It is so amazing! So I try to reproduce it. And I think I a
 <tr><th align="left" bgcolor=#f8f8f8> VOC07 test</th><td bgcolor=white> 544 </td><td bgcolor=white> 78.6 </td><td bgcolor=white> 78.1 </td></tr>
 </table></tbody>
 
+With 160 training epochs, my yolo-v2 only gets 76.0 mAP with 416 input size and 77.0 mAP with 544 input size. To be better, I add another 90 epochs.
+With 250 training epochs, my yolo-v2 performs very well !
 
 ## Tricks
 Tricks in official paper:
