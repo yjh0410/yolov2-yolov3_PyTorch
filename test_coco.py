@@ -105,7 +105,6 @@ def test():
 
     # load net
     num_classes = 80
-    anchor_size = config.ANCHOR_SIZE_COCO
     if args.dataset == 'COCO':
         cfg = config.coco_ab
         testset = COCODataset(
@@ -114,11 +113,9 @@ def test():
                     name='val2017',
                     img_size=cfg['min_dim'][0],
                     debug=args.debug)
-        mean = config.MEANS
     elif args.dataset == 'VOC':
         cfg = config.voc_ab
         testset = VOCDetection(VOC_ROOT, [('2007', 'test')], None, VOCAnnotationTransform())
-        mean = config.MEANS
 
 
     if args.version == 'yolo_v2':
