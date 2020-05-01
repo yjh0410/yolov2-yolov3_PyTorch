@@ -20,7 +20,7 @@ class YOLOv3tiny(nn.Module):
         self.anchor_number = self.anchor_size.size(1)
 
         self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid(input_size)
-        self.scale = np.array([[input_size[1], input_size[0], input_size[1], input_size[0]]])
+        self.scale = np.array([[[input_size[1], input_size[0], input_size[1], input_size[0]]]])
         self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
         # backbone darknet-19
