@@ -1,5 +1,11 @@
 # the whole project
-In this project, you can enjoy yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3. What I have to say is that I don't try to 100% reproduce official YOLO, because it is really difficult and I have not much computation resource. 
+In this project, you can enjoy: 
+- yolo-v2
+- yolo-v3
+- tiny-yolo-v2 
+- tiny-yolo-v3
+
+What I have to say is that I don't try to 100% reproduce the whole official YOLO project, because it is really hard to me. I have not much computation resource, so I can't train my yolov3 on COCO. It will cost more than two weeks...
 
 Recently, I made some improvement, and my yolo project is very close to official yolo models.
 
@@ -9,18 +15,8 @@ However, I have a qeustion: Is the mAP metric really good? Does it really suit o
 
 I find higher mAP doesn't mean better visualization...so weird.
 
-# pytorch-yolo-v3
-Good news !!!
 
-In this update, I add yolo-v3 model. For more details, you could see code files including ```models/yolo_v3.py``` and ```tools.py```.
-
-Recently, I made some improvement, and my yolo-v3 is being closer and closer to official yolo-v3.
-
-The new model is being trained, and I will upload it in time. Just hold on~
-
-In addition, you can replace darknet-53 with darknet-19 as the backbone of yolo-v3.
-
-# pytorch-yolo-v2
+# YOLOv2
 I really enjoy yolo. It is so amazing! So I try to reproduce it. And I think I achieve this goal:
 
 <table><tbody>
@@ -58,6 +54,34 @@ So I don't write data augmentation by myself. I'm a little lazy~~
 My loss function and groundtruth creator both in the ```tools.py```, and you can try to change any parameters to improve the model.
 
 Next, I plan to train my yolo-v2 on COCO.
+
+# YOLOv3
+Besides YOLOv2, I also try to reproduce YOLOv3. Before this, I rebuilt a darknet53 network with PyTorch and pretrained it on ImageNet, so I don't select official darknet53 model file...Oh! I forgot to you guys that my darknet19 used in my YOLOv2 is also rebuilt by myself with PyTorch. The top-1 performance of my darknet19 and darknet53 is following:
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch)  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 224 </td><td bgcolor=white> 72.9 </td><td bgcolor=white> 72.96 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 448 </td><td bgcolor=white> 76.5 </td><td bgcolor=white> 75.52 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 224 </td><td bgcolor=white> 77.2 </td><td bgcolor=white> 75.42 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 448 </td><td bgcolor=white> - </td><td bgcolor=white> 77.76 </td></tr>
+</table></tbody>
+
+Looks good !
+
+I have only one GPU meaning training YOLOv3 on COCO will cost my lots of time(more than two weeks), so I only train my YOLOv3 on VOC. The resule is shown:
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch) 250epochs </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> VOC07 test</th><td bgcolor=white> 416 </td><td bgcolor=white> 80.25 </td><td bgcolor=white> 81.4 </td></tr>
+</table></tbody>
+
+I use the same training strategy to my YOLOv2. My data-processing code is a little different from official YOLOv3. For more details, you can check my code files.
+
+# Tiny YOLOv2
+Please hold on ...
+
+# TIny YOLOv3
+Please hold on ...
 
 ## Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
@@ -97,13 +121,17 @@ I copy the download files from the following excellent project:
 https://github.com/DeNA/PyTorch_YOLOv3
 
 #### Download MSCOCO 2017 dataset
-Just run data/scripts/COCO2017.sh
+Just run ```sh data/scripts/COCO2017.sh```. You will get COCO train2017, val2017, test2017.
 
 
 ## Train
-To run:
+### VOC
 ```Shell
-python train_voc.py -v yolo_v2 -hr -ms --cuda
+python train_voc.py -v [select a model] -hr -ms --cuda
+```
+### COCO
+```Shell
+python train_coco.py -v [select a model] -hr -ms --cuda
 ```
 
 You can run ```python train_voc.py -h``` to check all optional argument.
@@ -111,15 +139,31 @@ You can run ```python train_voc.py -h``` to check all optional argument.
 By default, I set num_workers in pytorch dataloader as 0 to guarantee my multi-scale trick. But the trick can't work when I add more wokers. I know little about multithreading. So sad...
 
 ## Test
-To run:
+### VOC
 ```Shell
-python test_voc.py --trained_model [ Please input the path to model dir. ]
+python test_voc.py -v [select a model] --trained_model [ Please input the path to model dir. ] --cuda
 ```
+
+### COCO
+```Shell
+python test_coco.py -v [select a model] --trained_model [ Please input the path to model dir. ] --cuda
+```
+
 
 ## Evaluation
-To run:
+### VOC
 ```Shell
-python eval_voc.py --train_model [ Please input the path to model dir. ]
+python eval_voc.py -v [select a model] --train_model [ Please input the path to model dir. ] --cuda
 ```
 
-Finally, I have tried to train my yolo-v2 on MSCOCO-2017 datatset, but I didn't get a good result. My yolo-v2 got 31.5 AP50 on MSCOCO-valid dataset and its visualization results are a little poor. I haven't address this problem , but what I know is that MSCOCO is really a challenging dataset !
+### COCO
+To run on COCO_val:
+```Shell
+python eval_coco.py -v [select a model] --train_model [ Please input the path to model dir. ] --cuda
+```
+
+To run on COCO_test-dev(You must be sure that you have downloaded test2017):
+```Shell
+python eval_coco.py -v [select a model] --train_model [ Please input the path to model dir. ] --cuda -t
+```
+You will get a .json file which can be evaluated on COCO test server.
