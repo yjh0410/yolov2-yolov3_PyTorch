@@ -208,13 +208,18 @@ def train():
         # COCO evaluation
         if (epoch + 1) % args.eval_epoch == 0:
             model.trainable = False
+            model.set_grid(cfg['min_dim'])
+            # evaluate
             ap50_95, ap50 = evaluator.evaluate(model)
             print('ap50 : ', ap50)
             print('ap50_95 : ', ap50_95)
+            # convert to training mode.
             model.trainable = True
+            model.set_grid(input_size)
             model.train()
-            writer.add_scalar('val/COCOAP50', ap50, epoch + 1)
-            writer.add_scalar('val/COCOAP50_95', ap50_95, epoch + 1)
+            if args.tfboard:
+                writer.add_scalar('val/COCOAP50', ap50, epoch + 1)
+                writer.add_scalar('val/COCOAP50_95', ap50_95, epoch + 1)
 
 
         for iter_i, (images, targets) in enumerate(dataloader):
