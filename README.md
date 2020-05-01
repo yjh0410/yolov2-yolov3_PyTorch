@@ -30,6 +30,18 @@ With 250 training epochs, my yolo-v2 performs very well !
 
 During testing stage, I set conf thresh as 0.001 and set nms thresh as 0.5 to obtain above results. To make my model faster, I set conf thresh as 0.01. With this higher conf thresh, my yolo-v2 still performs very well and gets 77.0 mAP with 416 input size and 78.0 mAP with 544 input size.
 
+The COCO is coming ...
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Original (darknet)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 21.6 </td><td bgcolor=white> 44.0 </td><td bgcolor=white> 19.2 </td><td bgcolor=white> 5.0 </td><td bgcolor=white> 22.4 </td><td bgcolor=white> 35.5 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Ours (darknet)</th><td bgcolor=white> COCO eval-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Ours (darknet)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+
+</table></tbody>
+
 ## Tricks
 Tricks in official paper:
 - [x] batch norm
