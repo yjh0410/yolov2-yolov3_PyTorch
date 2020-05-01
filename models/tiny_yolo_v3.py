@@ -28,9 +28,8 @@ class YOLOv3tiny(nn.Module):
         
         # s = 32
         self.conv_set_3 = nn.Sequential(
+            Conv2d(512, 512, 3, padding=1, leakyReLU=True),
             Conv2d(512, 256, 1, leakyReLU=True),
-            Conv2d(256, 512, 3, padding=1, leakyReLU=True),
-            Conv2d(512, 256, 1, leakyReLU=True)
         )
         self.conv_1x1_3 = Conv2d(256, 128, 1, leakyReLU=True)
         self.extra_conv_3 = Conv2d(256, 512, 3, padding=1, leakyReLU=True)
@@ -38,9 +37,8 @@ class YOLOv3tiny(nn.Module):
 
         # s = 16
         self.conv_set_2 = nn.Sequential(
-            Conv2d(384, 128, 1, leakyReLU=True),
-            Conv2d(128, 256, 3, padding=1, leakyReLU=True),
-            Conv2d(256, 128, 1, leakyReLU=True)
+            Conv2d(384, 256, 3, padding=1, leakyReLU=True),
+            Conv2d(256, 128, 1, leakyReLU=True),
         )
         self.conv_1x1_2 = Conv2d(128, 64, 1, leakyReLU=True)
         self.extra_conv_2 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
@@ -48,9 +46,8 @@ class YOLOv3tiny(nn.Module):
 
         # s = 8
         self.conv_set_1 = nn.Sequential(
-            Conv2d(192, 64, 1, leakyReLU=True),
-            Conv2d(64, 128, 3, padding=1, leakyReLU=True),
-            Conv2d(128, 64, 1, leakyReLU=True)
+            Conv2d(192, 128, 3, padding=1, leakyReLU=True),
+            Conv2d(128, 64, 1, leakyReLU=True),
         )
         self.extra_conv_1 = Conv2d(64, 128, 3, padding=1, leakyReLU=True)
         self.pred_1 = nn.Conv2d(128, self.anchor_number*(1 + 4 + self.num_classes), 1)
