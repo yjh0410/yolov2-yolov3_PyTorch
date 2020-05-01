@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from utils import Conv2d
 from backbone import *
 import numpy as np
+import tools
 
 class YOLOv3tiny(nn.Module):
     def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.01, nms_thresh=0.50, anchor_size=None, hr=False):
@@ -29,9 +30,7 @@ class YOLOv3tiny(nn.Module):
         self.conv_set_3 = nn.Sequential(
             Conv2d(512, 256, 1, leakyReLU=True),
             Conv2d(256, 512, 3, padding=1, leakyReLU=True),
-            Conv2d(512, 256, 1, leakyReLU=True),
-            Conv2d(256, 512, 3, padding=1, leakyReLU=True),
-            Conv2d(512, 256, 1, leakyReLU=True),
+            Conv2d(512, 256, 1, leakyReLU=True)
         )
         self.conv_1x1_3 = Conv2d(256, 128, 1, leakyReLU=True)
         self.extra_conv_3 = Conv2d(256, 512, 3, padding=1, leakyReLU=True)
@@ -41,9 +40,7 @@ class YOLOv3tiny(nn.Module):
         self.conv_set_2 = nn.Sequential(
             Conv2d(384, 128, 1, leakyReLU=True),
             Conv2d(128, 256, 3, padding=1, leakyReLU=True),
-            Conv2d(256, 128, 1, leakyReLU=True),
-            Conv2d(128, 256, 3, padding=1, leakyReLU=True),
-            Conv2d(256, 128, 1, leakyReLU=True),
+            Conv2d(256, 128, 1, leakyReLU=True)
         )
         self.conv_1x1_2 = Conv2d(128, 64, 1, leakyReLU=True)
         self.extra_conv_2 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
@@ -53,9 +50,7 @@ class YOLOv3tiny(nn.Module):
         self.conv_set_1 = nn.Sequential(
             Conv2d(192, 64, 1, leakyReLU=True),
             Conv2d(64, 128, 3, padding=1, leakyReLU=True),
-            Conv2d(128, 64, 1, leakyReLU=True),
-            Conv2d(64, 128, 3, padding=1, leakyReLU=True),
-            Conv2d(128, 64, 1, leakyReLU=True),
+            Conv2d(128, 64, 1, leakyReLU=True)
         )
         self.extra_conv_1 = Conv2d(64, 128, 3, padding=1, leakyReLU=True)
         self.pred_1 = nn.Conv2d(128, self.anchor_number*(1 + 4 + self.num_classes), 1)
@@ -298,6 +293,6 @@ class YOLOv3tiny(nn.Module):
                                                                         pred_txtytwth=txtytwth_pred,
                                                                         label=target,
                                                                         num_classes=self.num_classes,
-                                                                        obj_loss_f='bce')
+                                                                        obj_loss_f='mse')
 
             return conf_loss, cls_loss, txtytwth_loss, total_loss

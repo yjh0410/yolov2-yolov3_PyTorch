@@ -28,8 +28,8 @@ class YOLOv2tiny(nn.Module):
         
         # detection head
         self.convsets_1 = nn.Sequential(
-            Conv2d(512, 256, 1, leakyReLU=True),
-            Conv2d(256, 512, 3, 1, leakyReLU=True)
+            Conv2d(512, 512, 1, leakyReLU=True),
+            Conv2d(512, 512, 3, 1, leakyReLU=True)
         )
 
         self.route_layer = Conv2d(256, 32, 1, leakyReLU=True)
