@@ -172,7 +172,7 @@ def train():
                     data_dir=data_dir,
                     img_size=cfg['min_dim'],
                     device=device,
-                    transform=BaseTransform(cfg['min_dim'], MEANS)
+                    transform=BaseTransform(cfg['min_dim'], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229))
                     )
 
     # optimizer setup
