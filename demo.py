@@ -38,7 +38,7 @@ def parse_args():
 
     parser.add_argument('-v', '--version', default='yolo_v2',
                         help='yolo_v2 and tiny_yolo_v2.')
-    parser.add_argument('--trained_model', default='weights/rm/',
+    parser.add_argument('--trained_model', default='weights/',
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--mode', default='image',
                         type=str, help='Use the data from image, video or camera')
@@ -80,7 +80,7 @@ def vis(img, bbox_pred, scores, cls_inds, setup='VOC'):
             cv2.putText(img, mess, (int(xmin), int(ymin)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
     return img
 
-def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_to_vid=None, path_to_save=None, setup='VOC'):
+def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=None, path_to_save=None, setup='VOC'):
     # ------------------------- Camera ----------------------------
     # I'm not sure whether this 'camera' mode works ...
     if mode == 'camera':
@@ -113,7 +113,9 @@ def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_
 
     # ------------------------- Image ----------------------------
     elif mode == 'image':
+        os.makedirs('test_results', exist_ok=True)
         for file in os.listdir(path_to_img):
+            save_path = os.path.join('test_results', file)
             img = cv2.imread(path_to_img + '/' + file, cv2.IMREAD_COLOR)
             x = img[:, :, (2, 1, 0)]
             x = torch.from_numpy(transform(x)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
@@ -132,6 +134,7 @@ def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_
 
             img_processed = vis(img, bbox_pred, scores, cls_inds, setup)
             cv2.imshow('detection result', img_processed)
+            cv2.imwrite(save_path, img_processed)
             cv2.waitKey(0)
 
     # ------------------------- Video ---------------------------
@@ -178,9 +181,11 @@ def run():
         device = torch.device("cpu")
 
     if args.setup == 'VOC':
+        print('use VOC style')
         cfg = config.voc_ab
         num_classes = 20
     elif args.setup == 'COCO':
+        print('use COCO style')
         cfg = config.coco_ab
         num_classes = 80
     else:
@@ -230,10 +235,10 @@ def run():
     # run
     if args.mode == 'image':
         detect(net, device, BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)), 
-                    thresh=args.visual_threshold, mode=args.mode, path_to_img=args.path_to_img, setup=args.setup)
+                    mode=args.mode, path_to_img=args.path_to_img, setup=args.setup)
     elif args.mode == 'video':
         detect(net, device, BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
-                    thresh=args.visual_threshold, mode=args.mode, path_to_vid=args.path_to_vid, path_to_save=args.path_to_saveVid, setup=args.setup)
+                    mode=args.mode, path_to_vid=args.path_to_vid, path_to_save=args.path_to_saveVid, setup=args.setup)
 
 
 if __name__ == '__main__':
