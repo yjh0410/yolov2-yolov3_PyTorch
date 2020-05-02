@@ -48,9 +48,9 @@ The COCO is coming ...
 
 <tr><th align="left" bgcolor=#f8f8f8> Original (darknet)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 21.6 </td><td bgcolor=white> 44.0 </td><td bgcolor=white> 19.2 </td><td bgcolor=white> 5.0 </td><td bgcolor=white> 22.4 </td><td bgcolor=white> 35.5 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Ours (darknet)</th><td bgcolor=white> COCO eval-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO eval-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Ours (darknet)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
 
 </table></tbody>
 
