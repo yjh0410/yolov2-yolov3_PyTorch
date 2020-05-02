@@ -299,6 +299,6 @@ class myYOLOv3(nn.Module):
                                                                         pred_txtytwth=txtytwth_pred,
                                                                         label=target,
                                                                         num_classes=self.num_classes,
-                                                                        obj_loss_f='bce')
+                                                                        obj_loss_f='mse')
 
             return conf_loss, cls_loss, txtytwth_loss, total_loss
