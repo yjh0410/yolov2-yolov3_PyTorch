@@ -153,14 +153,16 @@ Just run ```sh data/scripts/COCO2017.sh```. You will get COCO train2017, val2017
 ```Shell
 python train_voc.py -v [select a model] -hr -ms --cuda
 ```
+
+You can run ```python train_voc.py -h``` to check all optional argument.
+
+By default, I set num_workers in pytorch dataloader as 0 to guarantee my multi-scale trick. But the trick can't work when I add more wokers. I know little about multithreading. So sad...
+
 ### COCO
 ```Shell
 python train_coco.py -v [select a model] -hr -ms --cuda
 ```
 
-You can run ```python train_voc.py -h``` to check all optional argument.
-
-By default, I set num_workers in pytorch dataloader as 0 to guarantee my multi-scale trick. But the trick can't work when I add more wokers. I know little about multithreading. So sad...
 
 ## Test
 ### VOC
