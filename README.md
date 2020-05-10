@@ -42,17 +42,22 @@ I visualize some detection results whose score is over 0.3 on VOC 2007 test:
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000070.jpg)
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000072.jpg)
 
-The COCO is coming ...
+COCO:
+
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
 
 <tr><th align="left" bgcolor=#f8f8f8> Original (darknet)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 21.6 </td><td bgcolor=white> 44.0 </td><td bgcolor=white> 19.2 </td><td bgcolor=white> 5.0 </td><td bgcolor=white> 22.4 </td><td bgcolor=white> 35.5 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO eval-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 26.8 </td><td bgcolor=white> 46.6 </td><td bgcolor=white> 26.8 </td><td bgcolor=white> 5.8 </td><td bgcolor=white> 27.4 </td><td bgcolor=white> 45.2 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
-
+<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO eval-dev </td><td bgcolor=white> 26.6 </td><td bgcolor=white> 46.0 </td><td bgcolor=white> 26.7 </td><td bgcolor=white> 5.9 </td><td bgcolor=white> 27.8 </td><td bgcolor=white> 47.1 </td></tr>
 </table></tbody>
+
+I train my YOLOv2 with 250 epochs on COCO. From the above table, my YOLOv2 is better, right?
+
+Just enjoy it !
+
 
 ## Tricks
 Tricks in official paper:
@@ -102,10 +107,20 @@ I have only one GPU meaning training YOLOv3 on COCO will cost my lots of time(mo
 I use the same training strategy to my YOLOv2. My data-processing code is a little different from official YOLOv3. For more details, you can check my code files.
 
 # Tiny YOLOv2
-Please hold on ...
+I don't reproduce official TinyYOLOv2 !
+
+I build a very simple lightweight backbone: darknet_tiny
+
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/img_file/darknet_tiny.png)
+
+I replace the darknet19 with darknet_tiny.
+
+My TinyYOLOv2 is fast and strong. On VOC, it gets 70.7 mAP and 100+ FPS on 1660ti GPU.
+
+Just enjoy it.
 
 # TIny YOLOv3
-Please hold on ...
+This is just a toy model. I don't want to talk to much about it.
 
 ## Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
