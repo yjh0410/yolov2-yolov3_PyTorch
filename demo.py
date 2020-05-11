@@ -87,7 +87,6 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
         cap = cv2.VideoCapture(0)
         while True:
             ret, frame = cap.read()
-            x = frame[:, :, (2, 1, 0)]
             cv2.imshow('current frame', frame)
             if cv2.waitKey(1) == ord('q'):
                 break
@@ -117,7 +116,6 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
         for file in os.listdir(path_to_img):
             save_path = os.path.join('test_results', file)
             img = cv2.imread(path_to_img + '/' + file, cv2.IMREAD_COLOR)
-            x = img[:, :, (2, 1, 0)]
             x = torch.from_numpy(transform(x)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
             x = x.unsqueeze(0).to(device)
 
@@ -148,7 +146,6 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
             if ret:
                 # ------------------------- Detection ---------------------------
                 t0 = time.time()
-                x = frame[:, :, (2, 1, 0)]
                 x = torch.from_numpy(transform(x)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
                 x = x.unsqueeze(0).to(device)
 
