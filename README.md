@@ -1,9 +1,36 @@
+# Before the start
+Hi, everyone !
+
+Before you start to try this excellent project, I must tell you somthing:
+
+When you run my train code, you will find it is slow. 
+
+With one TITAN RTX GPU, I spent 2 days/15 days training my YOLOv3 on VOC/COCO.
+
+Oh! Come on ! Why is it soooooooooooo slow??????????????
+
+Because the workers in my dataloader is 0 which means it uses only one thread to process input datas. 
+
+If I add more workers, it will report some errors about input size when I use multi-scale training trick.
+
+I'm still trying to solve this trouble but I know much little about multithreading ...
+
+So~
+
+If you don't plan to try multi-scale training trick, just set num_workers as 8 or more. It will run faster.
+
+For example:
+
+```Shell
+python train_voc.py -v [select a model] -hr --cuda --num_workers 8
+```
+
 # the whole project
 In this project, you can enjoy: 
 - yolo-v2
 - yolo-v3
 - tiny-yolo-v2 
-- tiny-yolo-v3
+- tiny-yolo-v3(toy model, don't care~)
 
 What I have to say is that I don't try to 100% reproduce the whole official YOLO project, because it is really hard to me. I have not much computation resource, so I can't train my yolov3 on COCO. It will cost more than two weeks...
 
