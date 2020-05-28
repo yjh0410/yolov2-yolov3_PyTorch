@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from data.cocodataset import *
 from data import config, BaseTransform, VOCAnnotationTransform, VOCDetection, VOC_ROOT, VOC_CLASSES
+from utils import get_device
 import numpy as np
 import cv2
 import time
@@ -22,7 +23,7 @@ parser.add_argument('--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
 parser.add_argument('--dataset_root', default='./data/COCO/', 
                     help='Location of VOC root directory')
-parser.add_argument('--cuda', action='store_true', default=False,
+parser.add_argument('--cuda', action='store_true', default=False, 
                     help='use cuda.')
 parser.add_argument('-f', default=None, type=str, 
                     help="Dummy arg so we can load in Jupyter Notebooks")
@@ -57,9 +58,9 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
     num_images = len(testset)
     for index in range(num_images):
         print('Testing image {:d}/{:d}....'.format(index+1, num_images))
-        if args.version == 'COCO':
+        if args.dataset == 'COCO':
             img, _ = testset.pull_image(index)
-        elif args.version == 'VOC':
+        elif args.dataset == 'VOC':
             img = testset.pull_image(index)
         # img_id, annotation = testset.pull_anno(i)
         x = torch.from_numpy(transform(img)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
@@ -116,6 +117,7 @@ def test():
     elif args.dataset == 'VOC':
         cfg = config.voc_ab
         testset = VOCDetection(VOC_ROOT, [('2007', 'test')], None, VOCAnnotationTransform())
+        mean = config.MEANS
 
 
     if args.version == 'yolo_v2':

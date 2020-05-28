@@ -18,12 +18,12 @@ import torch
 from torch.autograd import Variable
 import torch.optim as optim
 
-parser = argparse.ArgumentParser(description='YOLO++ Detection')
+parser = argparse.ArgumentParser(description='YOLO Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
                     help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-t', '--testset', action='store_true', default=False,
                     help='COCO_val, COCO_test-dev dataset')
-parser.add_argument('--dataset_root', default='/home/k303/object-detection/dataset/COCO/', 
+parser.add_argument('--dataset_root', default='./data/COCO/', 
                     help='Location of VOC root directory')
 parser.add_argument('--trained_model', default='weights_yolo_v2/coco/', type=str,
                     help='Trained state_dict file path to open')

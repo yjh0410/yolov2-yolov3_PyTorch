@@ -38,9 +38,13 @@ def parse_args():
                         help='use cos lr')
     parser.add_argument('-no_wp', '--no_warm_up', action='store_true', default=False,
                         help='yes or no to choose using warmup strategy to train')
-    parser.add_argument('--wp_epoch', type=int, default=4,
+    parser.add_argument('--wp_epoch', type=int, default=2,
                         help='The upper bound of warm-up')
-    parser.add_argument('--dataset_root', default='/home/k303/object-detection/dataset/COCO/', 
+    parser.add_argument('--start_epoch', type=int, default=0,
+                        help='start epoch to train')
+    parser.add_argument('-r', '--resume', default=None, type=str, 
+                        help='keep training')
+    parser.add_argument('--dataset_root', default='./data/COCO/', 
                         help='Location of VOC root directory')
     parser.add_argument('--num_classes', default=80, type=int, 
                         help='The number of dataset classes')
@@ -154,11 +158,14 @@ def train():
         os.makedirs(log_path, exist_ok=True)
 
         writer = SummaryWriter(log_path)
-
-
-    print('Let us train yolo-v2 on the MSCOCO dataset ......')
     
     model = yolo_net
+
+    # keep training
+    if args.resume is not None:
+        print('keep training model: %s' % (args.resume))
+        model.load_state_dict(torch.load(args.resume, map_location=device))
+
     model.to(device).train()
 
     dataloader = torch.utils.data.DataLoader(
@@ -187,7 +194,7 @@ def train():
     # start training loop
     t0 = time.time()
 
-    for epoch in range(max_epoch):
+    for epoch in range(args.start_epoch, max_epoch):
 
         # use cos lr
         if args.cos and epoch > 20 and epoch <= max_epoch - 20:
@@ -226,8 +233,8 @@ def train():
             # WarmUp strategy for learning rate
             if not args.no_warm_up:
                 if epoch < args.wp_epoch:
-                    # tmp_lr = base_lr * pow((iter_i+epoch*epoch_size)*1. / (args.wp_epoch*epoch_size), 4)
-                    tmp_lr = 1e-6 + (base_lr-1e-6) * (iter_i+epoch*epoch_size) / (epoch_size * (args.wp_epoch))
+                    tmp_lr = base_lr * pow((iter_i+epoch*epoch_size)*1. / (args.wp_epoch*epoch_size), 4)
+                    # tmp_lr = 1e-6 + (base_lr-1e-6) * (iter_i+epoch*epoch_size) / (epoch_size * (args.wp_epoch))
                     set_lr(optimizer, tmp_lr)
 
                 elif epoch == args.wp_epoch and iter_i == 0:
@@ -241,7 +248,6 @@ def train():
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
                 targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, name='COCO')
 
-
             # to device
             images = images.to(device)
             targets = torch.tensor(targets).float().to(device)
@@ -254,13 +260,12 @@ def train():
             optimizer.step()
             optimizer.zero_grad()
 
-            if args.tfboard:
-                # viz loss
-                writer.add_scalar('object loss', conf_loss.item(), iter_i + epoch * epoch_size)
-                writer.add_scalar('class loss', cls_loss.item(), iter_i + epoch * epoch_size)
-                writer.add_scalar('local loss', txtytwth_loss.item(), iter_i + epoch * epoch_size)
-
             if iter_i % 10 == 0:
+                if args.tfboard:
+                    # viz loss
+                    writer.add_scalar('object loss', conf_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('class loss', cls_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('local loss', txtytwth_loss.item(), iter_i + epoch * epoch_size)
                 
                 t1 = time.time()
                 print('[Epoch %d/%d][Iter %d/%d][lr %.6f]'
@@ -273,9 +278,10 @@ def train():
 
             # multi-scale trick
             if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
-                # ms_ind = random.sample(ms_inds, 1)[0]
-                # input_size = cfg['multi_scale'][int(ms_ind)]
-                size = random.randint(10, 19) * 32
+                if epoch >= max_epoch - 10:
+                    size = 608
+                else:
+                    size = random.randint(10, 19) * 32
                 input_size = [size, size]
                 model.set_grid(input_size)
 

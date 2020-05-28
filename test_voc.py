@@ -13,7 +13,7 @@ import time
 from decimal import *
 
 
-parser = argparse.ArgumentParser(description='YOLO-v2 Detection')
+parser = argparse.ArgumentParser(description='YOLO Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
                     help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-d', '--dataset', default='VOC',

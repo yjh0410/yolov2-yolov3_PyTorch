@@ -90,7 +90,6 @@ def train():
     # use multi-scale trick
     if args.multi_scale:
         print('use multi-scale trick.')
-        ms_inds = range(len(cfg['multi_scale']))
         input_size = [608, 608]
         dataset = VOCDetection(root=args.dataset_root, transform=SSDAugmentation([608, 608], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
 
@@ -242,8 +241,8 @@ def train():
 
             # multi-scale trick
             if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
-                ms_ind = random.sample(ms_inds, 1)[0]
-                input_size = cfg['multi_scale'][int(ms_ind)]
+                size = random.randint(10, 19) * 32
+                input_size = [size, size]
                 model.set_grid(input_size)
 
                 # change input dim

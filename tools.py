@@ -56,15 +56,6 @@ class BCE_focal_loss(nn.Module):
         else:
             return pos_loss+neg_loss
   
-class CE_focal_loss(nn.Module):
-    def __init__(self,  weight=None, gamma=2, size_average=None, ignore_index=-100, reduce=None, reduction='mean'):
-        super(CE_focal_loss, self).__init__()
-        self.gamma = gamma
-        self.nll_loss = torch.nn.NLLLoss(weight, size_average, ignore_index, reduce, reduction)
-        self.reduction = reduction
-    def forward(self, inputs, targets):
-        return self.nll_loss((1 - F.softmax(inputs,1)) ** self.gamma * F.log_softmax(inputs,1), targets)
-
 def generate_anchor(input_size, stride, anchor_scale, anchor_aspect):
     """
         The function is used to design anchor boxes by ourselves as long as you provide the scale and aspect of anchor boxes.
