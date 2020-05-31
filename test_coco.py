@@ -117,7 +117,6 @@ def test():
     elif args.dataset == 'VOC':
         cfg = config.voc_ab
         testset = VOCDetection(VOC_ROOT, [('2007', 'test')], None, VOCAnnotationTransform())
-        mean = config.MEANS
 
 
     if args.version == 'yolo_v2':

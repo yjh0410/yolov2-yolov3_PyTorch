@@ -81,7 +81,6 @@ def test():
     # load net
     num_classes = len(VOC_CLASSES)
     testset = VOCDetection(args.voc_root, [('2007', 'test')], None, VOCAnnotationTransform())
-    mean = config.MEANS
 
     cfg = config.voc_ab
     if args.version == 'yolo_v2':
