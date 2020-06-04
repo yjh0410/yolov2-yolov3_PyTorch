@@ -270,7 +270,7 @@ def gt_creator(input_size, stride, label_lists, name='VOC'):
                             gt_tensor[batch_index, grid_y, grid_x, index, 7:] = np.array([xmin, ymin, xmax, ymax])
                     else:
                         gt_tensor[batch_index, grid_y, grid_x, index, 0] = -1.0
-                        gt_tensor[batch_index, grid_y, grid_x, index, -1] = -1.0
+                        gt_tensor[batch_index, grid_y, grid_x, index, 6] = -1.0
 
     gt_tensor = gt_tensor.reshape(batch_size, hs * ws * anchor_number, 1+1+4+1+4)
 
@@ -389,7 +389,7 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
                             grid_x = int(c_x_s)
                             grid_y = int(c_y_s)
                             gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 0] = -1.0
-                            gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, -1] = -1.0
+                            gt_tensor[s_indx][batch_index, grid_y, grid_x, ab_ind, 6] = -1.0
 
     gt_tensor = [gt.reshape(batch_size, -1, 1+1+4+1+4) for gt in gt_tensor]
     gt_tensor = np.concatenate(gt_tensor, 1)
