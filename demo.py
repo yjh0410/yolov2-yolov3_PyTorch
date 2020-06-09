@@ -145,10 +145,10 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
             
             if ret:
                 # ------------------------- Detection ---------------------------
-                t0 = time.time()
                 x = torch.from_numpy(transform(frame)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
                 x = x.unsqueeze(0).to(device)
-
+                
+                t0 = time.time()
                 y = net(x)      # forward pass
                 detections = y
                 print("detection time used ", time.time() - t0, "s")
