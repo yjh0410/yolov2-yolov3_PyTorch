@@ -163,8 +163,8 @@ def train():
 
     # keep training
     if args.resume is not None:
-        print('keep training model: %s' % (args.resume))
-        model.load_state_dict(torch.load(args.resume, map_location=device))
+        print('keep training model or finetune : %s' % (args.resume))
+        model.load_state_dict(torch.load(args.resume, map_location=device), strict=False)
 
     model.to(device).train()
 
