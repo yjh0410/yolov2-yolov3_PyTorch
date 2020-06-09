@@ -303,3 +303,34 @@ To run on COCO_test-dev(You must be sure that you have downloaded test2017):
 python eval_coco.py -v [select a model] --train_model [ Please input the path to model dir. ] --cuda -t
 ```
 You will get a .json file which can be evaluated on COCO test server.
+
+You can run ```python train_voc.py -h``` to check all optional argument.
+
+By default, I set num_workers in pytorch dataloader as 0 to guarantee my multi-scale trick. But the trick can't work when I add more wokers. I know little about multithreading. So sad...
+
+### Train yourself
+
+you can give a path to trained model to --resume. For example:
+
+```Shell
+python train_voc.py -v yolo_v3 -ms --cuda --resume weights/coco/yolo_v3/yolo_v3_260epoch_416_57.6_36.0.pth
+```
+
+Remember, you need to change the name of pred layer in my YOLOv3 model code file. For example:
+
+```Shell
+self.pred_1 -> self.pred_1_1
+self.pred_2 -> self.pred_2_1
+self.pred_3 -> self.pred_3_1
+```
+
+Otherwise, there will be some errors~
+
+Remember again!
+
+If you want to change input size, you need to open ```data/config.py``` and give a new size to ```'min_dim'```. For example:
+
+```
+'min_dim': [416, 416], -> 'min_dim': [640, 640],
+```
+
