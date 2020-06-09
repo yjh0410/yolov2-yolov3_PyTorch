@@ -225,7 +225,7 @@ def run():
 
         net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
     
-    net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
+    net.load_state_dict(torch.load(args.trained_model, map_location=device))
     net.to(device).eval()
     print('Finished loading model!')
 
