@@ -57,11 +57,10 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
             cls_indx = cls_inds[i]
             xmin, ymin, xmax, ymax = box
             if scores[i] > thresh:
-                box_w = int(xmax - xmin)
-                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_color[int(cls_indx)], 2)
-                cv2.rectangle(img, (int(xmin), int(abs(ymin)-15)), (int(xmin+box_w*0.55), int(ymin)), class_color[int(cls_indx)], -1)
-                mess = '%s: %.3f' % (CLASSES[int(cls_indx)], scores[i])
-                cv2.putText(img, mess, (int(xmin), int(ymin)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
+                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_color[int(cls_indx)], 1)
+                cv2.rectangle(img, (int(xmin), int(abs(ymin)-20)), (int(xmax), int(ymin)), class_color[int(cls_indx)], -1)
+                mess = '%s' % (CLASSES[int(cls_indx)])
+                cv2.putText(img, mess, (int(xmin), int(ymin)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
         cv2.imshow('detection', img)
         cv2.waitKey(0)
         # print('Saving the' + str(index) + '-th image ...')

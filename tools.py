@@ -234,7 +234,7 @@ def gt_creator(input_size, stride, label_lists, name='VOC'):
                             (xmin, ymin, xmax, ymax) : the coords of a bbox whose valus is between 0 and 1;
                             cls_ind : the corresponding class label.
     Output:
-        gt_tensor : ndarray -> shape = [batch_size, anchor_number, 1+1+4, grid_cell number ]
+        gt_tensor : ndarray -> shape = [batch_size, grid_cell number * anchor_number, 1+1+4+1+4]
     """
     assert len(input_size) > 0 and len(label_lists) > 0
     # prepare the all empty gt datas
