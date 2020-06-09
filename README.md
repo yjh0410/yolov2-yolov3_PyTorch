@@ -198,7 +198,7 @@ Our YOLOv3_PyTorch:
 
 My YOLOv3 is very stronger and better, right?
 
-I also visualize some detection results whose score is over 0.3 on COCO 2017 test-dev:
+I also visualize some detection results whose score is over 0.3 on COCO 2017-val:
 
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/000003.jpg)
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/000077.jpg)
