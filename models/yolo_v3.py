@@ -292,7 +292,7 @@ class myYOLOv3(nn.Module):
             # print(iou.min(), iou.max())
 
             # we set iou between pred bbox and gt bbox as conf label. 
-            # [obj, cls, txtytwth, x1y1x2y2] -> [conf, obj, cls, txtytwth]
+            # [obj, cls, txtytwth, scale_weight, x1y1x2y2] -> [conf, obj, cls, txtytwth, scale_weight]
             target = torch.cat([iou, target[:, :, :7]], dim=2)
 
             conf_loss, cls_loss, txtytwth_loss, total_loss = tools.loss(pred_conf=conf_pred, pred_cls=cls_pred,
