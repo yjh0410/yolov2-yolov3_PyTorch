@@ -200,17 +200,17 @@ My YOLOv3 is very stronger and better, right?
 
 I also visualize some detection results whose score is over 0.3 on COCO 2017 test-dev:
 
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/000003.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/000077.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/003422.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/003853.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/003970.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/004040.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/004157.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/004283.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/004862.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/004985.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO/004988.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/000003.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/000077.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/003422.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/003853.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/003970.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004040.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004157.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004283.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004862.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004985.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004988.jpg)
 
 HAHAHAHA!
 
