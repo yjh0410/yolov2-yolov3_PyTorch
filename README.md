@@ -114,7 +114,7 @@ COCO:
 
 <tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 26.8 </td><td bgcolor=white> 46.6 </td><td bgcolor=white> 26.8 </td><td bgcolor=white> 5.8 </td><td bgcolor=white> 27.4 </td><td bgcolor=white> 45.2 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO eval-dev </td><td bgcolor=white> 26.6 </td><td bgcolor=white> 46.0 </td><td bgcolor=white> 26.7 </td><td bgcolor=white> 5.9 </td><td bgcolor=white> 27.8 </td><td bgcolor=white> 47.1 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 26.6 </td><td bgcolor=white> 46.0 </td><td bgcolor=white> 26.7 </td><td bgcolor=white> 5.9 </td><td bgcolor=white> 27.8 </td><td bgcolor=white> 47.1 </td></tr>
 </table></tbody>
 
 I train my YOLOv2 with 250 epochs on COCO. From the above table, my YOLOv2 is better, right?
