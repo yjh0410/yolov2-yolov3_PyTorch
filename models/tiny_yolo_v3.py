@@ -15,8 +15,8 @@ class YOLOv3tiny(nn.Module):
         self.trainable = trainable
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
-        self.stride = [8, 16, 32]
-        self.anchor_size = torch.tensor(anchor_size).view(3, len(anchor_size) // 3, 2)
+        self.stride = [16, 32]
+        self.anchor_size = torch.tensor(anchor_size).view(2, len(anchor_size) // 2, 2)
         self.anchor_number = self.anchor_size.size(1)
 
         self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid(input_size)
@@ -24,33 +24,19 @@ class YOLOv3tiny(nn.Module):
         self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
         # backbone darknet-19
-        self.backbone = darknet_tiny(pretrained=trainable, hr=hr)
+        self.backbone = darknet_light(pretrained=trainable, hr=hr)
         
         # s = 32
-        self.conv_set_3 = nn.Sequential(
-            Conv2d(512, 512, 3, padding=1, leakyReLU=True),
-            Conv2d(512, 256, 1, leakyReLU=True),
-        )
-        self.conv_1x1_3 = Conv2d(256, 128, 1, leakyReLU=True)
-        self.extra_conv_3 = Conv2d(256, 512, 3, padding=1, leakyReLU=True)
-        self.pred_3 = nn.Conv2d(512, self.anchor_number*(1 + 4 + self.num_classes), 1)
+        self.conv_set_2 = Conv2d(1024, 256, 3, padding=1, leakyReLU=True)
+
+        self.conv_1x1_2 = Conv2d(256, 128, 1, leakyReLU=True)
+
+        self.extra_conv_2 = Conv2d(256, 512, 3, padding=1, leakyReLU=True)
+        self.pred_2 = nn.Conv2d(512, self.anchor_number*(1 + 4 + self.num_classes), 1)
 
         # s = 16
-        self.conv_set_2 = nn.Sequential(
-            Conv2d(384, 256, 3, padding=1, leakyReLU=True),
-            Conv2d(256, 128, 1, leakyReLU=True),
-        )
-        self.conv_1x1_2 = Conv2d(128, 64, 1, leakyReLU=True)
-        self.extra_conv_2 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
-        self.pred_2 = nn.Conv2d(256, self.anchor_number*(1 + 4 + self.num_classes), 1)
-
-        # s = 8
-        self.conv_set_1 = nn.Sequential(
-            Conv2d(192, 128, 3, padding=1, leakyReLU=True),
-            Conv2d(128, 64, 1, leakyReLU=True),
-        )
-        self.extra_conv_1 = Conv2d(64, 128, 3, padding=1, leakyReLU=True)
-        self.pred_1 = nn.Conv2d(128, self.anchor_number*(1 + 4 + self.num_classes), 1)
+        self.conv_set_1 = Conv2d(384, 256, 3, padding=1, leakyReLU=True)
+        self.pred_1 = nn.Conv2d(256, self.anchor_number*(1 + 4 + self.num_classes), 1)
     
     def create_grid(self, input_size):
         total_grid_xy = []
@@ -194,34 +180,26 @@ class YOLOv3tiny(nn.Module):
 
     def forward(self, x, target=None):
         # backbone
-        fmp_1, fmp_2, fmp_3 = self.backbone(x)
+        C_4, C_5 = self.backbone(x)
 
         # detection head
         # multi scale feature map fusion
-        fmp_3 = self.conv_set_3(fmp_3)
-        fmp_3_up = F.interpolate(self.conv_1x1_3(fmp_3), scale_factor=2.0, mode='bilinear', align_corners=True)
+        C_5 = self.conv_set_2(C_5)
+        C_5_up = F.interpolate(self.conv_1x1_2(C_5), scale_factor=2.0, mode='bilinear', align_corners=True)
 
-        fmp_2 = torch.cat([fmp_2, fmp_3_up], 1)
-        fmp_2 = self.conv_set_2(fmp_2)
-        fmp_2_up = F.interpolate(self.conv_1x1_2(fmp_2), scale_factor=2.0, mode='bilinear', align_corners=True)
-
-        fmp_1 = torch.cat([fmp_1, fmp_2_up], 1)
-        fmp_1 = self.conv_set_1(fmp_1)
+        C_4 = torch.cat([C_4, C_5_up], dim=1)
+        C_4 = self.conv_set_1(C_4)
 
         # head
         # s = 32
-        fmp_3 = self.extra_conv_3(fmp_3)
-        pred_3 = self.pred_3(fmp_3)
+        C_5 = self.extra_conv_2(C_5)
+        pred_2 = self.pred_2(C_5)
 
         # s = 16
-        fmp_2 = self.extra_conv_2(fmp_2)
-        pred_2 = self.pred_2(fmp_2)
+        pred_1 = self.pred_1(C_4)
 
-        # s = 8
-        fmp_1 = self.extra_conv_1(fmp_1)
-        pred_1 = self.pred_1(fmp_1)
 
-        preds = [pred_1, pred_2, pred_3]
+        preds = [pred_1, pred_2]
         total_conf_pred = []
         total_cls_pred = []
         total_txtytwth_pred = []
