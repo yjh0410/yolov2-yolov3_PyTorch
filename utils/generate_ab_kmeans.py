@@ -134,42 +134,44 @@ def anchor_box_kmeans(total_gt_boxes, n_anchors, loss_convergence, iters, plus=T
     
     print("k-means result : ") 
     for centroid in centroids:
-        print(centroid.w, centroid.h)
+        print(round(centroid.w, 2), round(centroid.h, 2), "area: ", round(centroid.w, 2) * round(centroid.h, 2))
     
     return centroids
 
 if __name__ == "__main__":
-    n_anchors = 5
+    n_anchors = 6
     loss_convergence = 1e-6
     iters_n = 1000
-    input_size = [416, 416] #[h, w]
-    stride = 32
-    dataset = VOCDetection(root=VOC_ROOT,
-                        transform=BaseTransform(input_size, MEANS))
+    input_size = 416
+    # dataset = VOCDetection(root=VOC_ROOT,
+    #                     transform=BaseTransform([416, 416]))
     dataset = COCODataset(
                   data_dir='./data/COCO/',
-                  img_size=input_size[0],
-                  transform=BaseTransform(input_size, MEANS),
+                  img_size=input_size,
+                  transform=BaseTransform(input_size),
                   debug=None)
     boxes = []
     print("The dataset size: ", len(dataset))
     print("Loading the dataset ...")
     for i in range(len(dataset)):
+        if i % 5000 == 0:
+            print('Loading datat [%d / %d]' % (i+1, len(dataset)))
+
         # For COCO
         img, _ = dataset.pull_image(i)
         w, h = img.shape[1], img.shape[0]
         annotation = dataset.pull_anno(i)
+
         # # For VOC
         # img = dataset.pull_image(i)
         # w, h = img.shape[1], img.shape[0]
         # _, annotation = dataset.pull_anno(i)
+
         for box_and_label in annotation:
             box = box_and_label[:-1]
             xmin, ymin, xmax, ymax = box
-            bx = (xmin + xmax) / 2 / w * input_size[1] / stride
-            by = (ymin + ymax) / 2 / h * input_size[0] / stride
-            bw = (xmax - xmin) / w * input_size[1] / stride
-            bh = (ymax - ymin) / h * input_size[0] / stride
+            bw = (xmax - xmin) / w * input_size
+            bh = (ymax - ymin) / h * input_size
             boxes.append(Box(0, 0, bw, bh))
     # for i in range(5):
     #     w, h = 2*(i+1)+np.random.randint(5), 2*(i+1)+np.random.randint(5)
