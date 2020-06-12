@@ -230,7 +230,7 @@ My TinyYOLOv2 is fast and strong. On VOC, it gets 70.7 mAP and 100+ FPS on 1660t
 Just enjoy it.
 
 # TIny YOLOv3
-This is just a toy model. I don't want to talk to much about it.
+I'm trying to reproduce a pytorch version of TinyYOLOv3 ...
 
 ## Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
