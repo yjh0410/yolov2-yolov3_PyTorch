@@ -193,8 +193,6 @@ class DarkNet_Tiny(nn.Module):
             Conv_BN_LeakyReLU(512, 512, 3, padding=1, stride=2),
         )
 
-        # self.conv_6 = nn.Conv2d(512, 1000, 1)
-        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, x):
         x = self.conv_1(x)
@@ -202,10 +200,7 @@ class DarkNet_Tiny(nn.Module):
         C_3 = self.conv_3(x)
         C_4 = self.conv_4(C_3)
         C_5 = self.conv_5(C_4)
-        # x = self.conv_6(x)
 
-        # x = self.avgpool(x)
-        # x = x.view(x.size(0), -1)
         return C_3, C_4, C_5
 
 def darknet19(pretrained=False, hr=False, **kwargs):
