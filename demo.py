@@ -145,10 +145,10 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
             
             if ret:
                 # ------------------------- Detection ---------------------------
+                t0 = time.time()
                 x = torch.from_numpy(transform(frame)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
                 x = x.unsqueeze(0).to(device)
-                
-                t0 = time.time()
+
                 y = net(x)      # forward pass
                 detections = y
                 print("detection time used ", time.time() - t0, "s")
@@ -219,9 +219,9 @@ def run():
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
         if args.setup == 'VOC':
-            anchor_size = config.MULTI_ANCHOR_SIZE
+            anchor_size = config.TINY_MULTI_ANCHOR_SIZE
         else:
-            anchor_size = config.MULTI_ANCHOR_SIZE_COCO
+            anchor_size = config.TINY_MULTI_ANCHOR_SIZE_COCO
 
         net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
     

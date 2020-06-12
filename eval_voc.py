@@ -72,7 +72,6 @@ else:
 
 YEAR = '2007'
 devkit_path = args.voc_root + 'VOC' + YEAR
-dataset_mean = (104, 117, 123)
 set_type = 'test'
 
 annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')

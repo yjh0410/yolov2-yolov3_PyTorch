@@ -82,15 +82,27 @@ def generate_anchor(input_size, stride, anchor_scale, anchor_aspect):
             total_anchor_size.append([ab_w, ab_h])
     return total_anchor_size
 
-def get_total_anchor_size(multi_level=False, name='VOC'):
+def get_total_anchor_size(multi_level=False, name='VOC', version=None):
     if name == 'VOC':
         if multi_level:
-            all_anchor_size = MULTI_ANCHOR_SIZE
+            if version == 'yolo_v3':
+                all_anchor_size = MULTI_ANCHOR_SIZE
+            elif version == 'tiny_yolo_v3':
+                all_anchor_size = TINY_MULTI_ANCHOR_SIZE
+            else:
+                print('Unknown Version !!!')
+                exit(0)
         else:
             all_anchor_size = ANCHOR_SIZE
     elif name == 'COCO':
         if multi_level:
-            all_anchor_size = MULTI_ANCHOR_SIZE_COCO
+            if version == 'yolo_v3':
+                all_anchor_size = MULTI_ANCHOR_SIZE_COCO
+            elif version == 'tiny_yolo_v3':
+                all_anchor_size = TINY_MULTI_ANCHOR_SIZE_COCO
+            else:
+                print('Unknown Version !!!')
+                exit(0)
         else:
             all_anchor_size = ANCHOR_SIZE_COCO
 
@@ -223,7 +235,7 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
 
         return result 
 
-def gt_creator(input_size, stride, label_lists, name='VOC'):
+def gt_creator(input_size, stride, label_lists, name='VOC', version=None):
     """
     Input:
         input_size : list -> the size of image in the training stage.
@@ -234,7 +246,7 @@ def gt_creator(input_size, stride, label_lists, name='VOC'):
                             (xmin, ymin, xmax, ymax) : the coords of a bbox whose valus is between 0 and 1;
                             cls_ind : the corresponding class label.
     Output:
-        gt_tensor : ndarray -> shape = [batch_size, grid_cell number * anchor_number, 1+1+4+1+4]
+        gt_tensor : ndarray -> shape = [batch_size, anchor_number, 1+1+4, grid_cell number ]
     """
     assert len(input_size) > 0 and len(label_lists) > 0
     # prepare the all empty gt datas
@@ -248,7 +260,7 @@ def gt_creator(input_size, stride, label_lists, name='VOC'):
     s = stride
 
     # We use anchor boxes to build training target.
-    all_anchor_size = get_total_anchor_size(name=name)
+    all_anchor_size = get_total_anchor_size(name=name, version=version)
     anchor_number = len(all_anchor_size)
 
     gt_tensor = np.zeros([batch_size, hs, ws, anchor_number, 1+1+4+1+4])
@@ -276,7 +288,7 @@ def gt_creator(input_size, stride, label_lists, name='VOC'):
 
     return gt_tensor
 
-def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
+def multi_gt_creator(input_size, strides, label_lists=[], name='VOC', version=None):
     """creator multi scales gt"""
     # prepare the all empty gt datas
     batch_size = len(label_lists)
@@ -285,7 +297,7 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC'):
     gt_tensor = []
 
     # generate gt datas
-    all_anchor_size = get_total_anchor_size(multi_level=True, name=name)
+    all_anchor_size = get_total_anchor_size(multi_level=True, name=name, version=version)
     anchor_number = len(all_anchor_size) // num_scale
     for s in strides:
         gt_tensor.append(np.zeros([batch_size, h//s, w//s, anchor_number, 1+1+4+1+4]))

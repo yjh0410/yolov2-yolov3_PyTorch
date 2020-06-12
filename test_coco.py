@@ -56,6 +56,10 @@ coco_class_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
 def test_net(net, device, testset, transform, thresh, mode='voc'):
     class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(80)]
     num_images = len(testset)
+
+    path_save = os.path.join('test_images/', args.dataset, args.version) 
+    os.makedirs(path_save, exist_ok=True)
+
     for index in range(num_images):
         print('Testing image {:d}/{:d}....'.format(index+1, num_images))
         if args.dataset == 'COCO':
@@ -90,8 +94,9 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
                 cv2.putText(img, mess, (int(xmin), int(ymin-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
         cv2.imshow('detection', img)
         cv2.waitKey(0)
-        # print('Saving the' + str(index) + '-th image ...')
-        # cv2.imwrite('test_images/' + args.dataset+ '3/' + str(index).zfill(6) +'.jpg', img)
+        # if index % 500 == 0:
+        #     print('Saving ' + str(index) + '-th image ...')
+        # cv2.imwrite(os.path.join(path_save, str(index).zfill(6) +'.jpg'), img)
 
 
 
@@ -117,6 +122,7 @@ def test():
     elif args.dataset == 'VOC':
         cfg = config.voc_ab
         testset = VOCDetection(VOC_ROOT, [('2007', 'test')], None, VOCAnnotationTransform())
+        mean = config.MEANS
 
 
     if args.version == 'yolo_v2':
@@ -135,7 +141,7 @@ def test():
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
     
-        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE_COCO)
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.TINY_MULTI_ANCHOR_SIZE_COCO)
 
     net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
     net.to(device).eval()

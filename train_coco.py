@@ -117,7 +117,7 @@ def train():
 
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
-        total_anchor_size = tools.get_total_anchor_size(multi_level=True, name='COCO')
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True, name='COCO', version='yolo_v3')
         
         yolo_net = myYOLOv3(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v3 on the COCO dataset ......')
@@ -131,7 +131,7 @@ def train():
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
-        total_anchor_size = tools.get_total_anchor_size(multi_level=True, name='COCO')
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True, name='COCO', version='tiny_yolo_v3')
     
         yolo_net = YOLOv3tiny(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v3 on the COCO dataset ......')
@@ -163,8 +163,8 @@ def train():
 
     # keep training
     if args.resume is not None:
-        print('keep training model or finetune : %s' % (args.resume))
-        model.load_state_dict(torch.load(args.resume, map_location=device), strict=False)
+        print('keep training model: %s' % (args.resume))
+        model.load_state_dict(torch.load(args.resume, map_location=device))
 
     model.to(device).train()
 
@@ -244,9 +244,9 @@ def train():
 
             targets = [label.tolist() for label in targets]
             if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
-                targets = tools.gt_creator(input_size, yolo_net.stride, targets, name='COCO')
+                targets = tools.gt_creator(input_size, yolo_net.stride, targets, name='COCO', version=args.version)
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
-                targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, name='COCO')
+                targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, name='COCO', version=args.version)
 
             # to device
             images = images.to(device)

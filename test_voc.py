@@ -57,10 +57,10 @@ def test_net(net, device, testset, transform, thresh, mode='voc'):
             cls_indx = cls_inds[i]
             xmin, ymin, xmax, ymax = box
             if scores[i] > thresh:
-                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_color[int(cls_indx)], 1)
+                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_color[int(cls_indx)], 2)
                 cv2.rectangle(img, (int(xmin), int(abs(ymin)-20)), (int(xmax), int(ymin)), class_color[int(cls_indx)], -1)
                 mess = '%s' % (CLASSES[int(cls_indx)])
-                cv2.putText(img, mess, (int(xmin), int(ymin)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+                cv2.putText(img, mess, (int(xmin), int(ymin-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
         cv2.imshow('detection', img)
         cv2.waitKey(0)
         # print('Saving the' + str(index) + '-th image ...')
@@ -99,7 +99,7 @@ def test():
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
     
-        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE)
+        net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.TINY_MULTI_ANCHOR_SIZE)
         print('Let us test tiny-yolo-v3 on the VOC0712 dataset ......')
 
     net.load_state_dict(torch.load(args.trained_model, map_location=device))

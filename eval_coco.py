@@ -95,7 +95,7 @@ if __name__ == '__main__':
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
     
-        model = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, anchor_size=MULTI_ANCHOR_SIZE_COCO)
+        model = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, anchor_size=TINY_MULTI_ANCHOR_SIZE_COCO)
     
     else:
         print('Unknown Version !!!')

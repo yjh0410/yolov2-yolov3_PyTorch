@@ -107,7 +107,7 @@ def train():
 
     elif args.version == 'yolo_v3':
         from models.yolo_v3 import myYOLOv3
-        total_anchor_size = tools.get_total_anchor_size(multi_level=True)
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True, version='yolo_v3')
         
         yolo_net = myYOLOv3(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v3 on the VOC0712 dataset ......')
@@ -121,7 +121,7 @@ def train():
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
-        total_anchor_size = tools.get_total_anchor_size(multi_level=True)
+        total_anchor_size = tools.get_total_anchor_size(multi_level=True, version='tiny_yolo_v3')
     
         yolo_net = YOLOv3tiny(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train tiny-yolo-v3 on the VOC0712 dataset ......')
@@ -129,6 +129,7 @@ def train():
     else:
         print('Unknown version !!!')
         exit()
+
 
     # finetune the model trained on COCO 
     if args.resume is not None:
@@ -207,9 +208,9 @@ def train():
 
             # make train label
             if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
-                targets = tools.gt_creator(input_size, yolo_net.stride, targets)
+                targets = tools.gt_creator(input_size, yolo_net.stride, targets, version=args.version)
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
-                targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets)
+                targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, version=args.version)
 
             # to device
             images = images.to(device)
