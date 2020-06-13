@@ -33,7 +33,7 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='YOLO-v2 Detector Evaluation')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3.')
+                    help='yolo_v2, yolo_v3, slim_yolo_v2, tiny_yolo_v3.')
 parser.add_argument('-d', '--dataset', default='VOC',
                     help='VOC or COCO dataset')
 parser.add_argument('--trained_model', type=str,
@@ -407,10 +407,10 @@ if __name__ == '__main__':
         from models.yolo_v3 import myYOLOv3
         net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.MULTI_ANCHOR_SIZE)
     
-    elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import YOLOv2tiny    
-        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE)
-        print('Let us eval tiny-yolo-v2 on the VOC0712 dataset ......')
+    elif args.version == 'slim_yolo_v2':
+        from models.slim_yolo_v2 import SlimYOLOv2    
+        net = SlimYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, anchor_size=config.ANCHOR_SIZE)
+        print('Let us eval slim-yolo-v2 on the VOC0712 dataset ......')
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny

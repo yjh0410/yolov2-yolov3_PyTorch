@@ -21,7 +21,7 @@ import torch.backends.cudnn as cudnn
 def parse_args():
     parser = argparse.ArgumentParser(description='YOLO Detection')
     parser.add_argument('-v', '--version', default='yolo_v2',
-                        help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
+                        help='yolo_v2, yolo_v3, slim_yolo_v2, tiny_yolo_v3')
     parser.add_argument('-d', '--dataset', default='VOC',
                         help='VOC or COCO dataset')
     parser.add_argument('-hr', '--high_resolution', action='store_true', default=False,
@@ -122,12 +122,12 @@ def train():
         yolo_net = myYOLOv3(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
         print('Let us train yolo-v3 on the COCO dataset ......')
 
-    elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import YOLOv2tiny
+    elif args.version == 'slim_yolo_v2':
+        from models.slim_yolo_v2 import SlimYOLOv2
         total_anchor_size = tools.get_total_anchor_size(name='COCO')
     
-        yolo_net = YOLOv2tiny(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
-        print('Let us train tiny-yolo-v2 on the COCO dataset ......')
+        yolo_net = SlimYOLOv2(device, input_size=input_size, num_classes=args.num_classes, trainable=True, anchor_size=total_anchor_size, hr=hr)
+        print('Let us train slim-yolo-v2 on the COCO dataset ......')
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
@@ -243,7 +243,7 @@ def train():
         
 
             targets = [label.tolist() for label in targets]
-            if args.version == 'yolo_v2' or args.version == 'tiny_yolo_v2':
+            if args.version == 'yolo_v2' or args.version == 'slim_yolo_v2':
                 targets = tools.gt_creator(input_size, yolo_net.stride, targets, name='COCO', version=args.version)
             elif args.version == 'yolo_v3' or args.version == 'tiny_yolo_v3':
                 targets = tools.multi_gt_creator(input_size, yolo_net.stride, targets, name='COCO', version=args.version)

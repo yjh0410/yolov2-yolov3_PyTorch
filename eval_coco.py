@@ -20,7 +20,7 @@ import torch.optim as optim
 
 parser = argparse.ArgumentParser(description='YOLO Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolo_v2, yolo_v3, tiny_yolo_v2, tiny_yolo_v3')
+                    help='yolo_v2, yolo_v3, slim_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-t', '--testset', action='store_true', default=False,
                     help='COCO_val, COCO_test-dev dataset')
 parser.add_argument('--dataset_root', default='./data/COCO/', 
@@ -88,9 +88,9 @@ if __name__ == '__main__':
         from models.yolo_v3 import myYOLOv3
         model = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=args.num_classes, anchor_size=MULTI_ANCHOR_SIZE_COCO)
 
-    elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import YOLOv2tiny    
-        model = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=args.num_classes, anchor_size=ANCHOR_SIZE_COCO)
+    elif args.version == 'slim_yolo_v2':
+        from models.slim_yolo_v2 import SlimYOLOv2    
+        model = SlimYOLOv2(device, input_size=cfg['min_dim'], num_classes=args.num_classes, anchor_size=ANCHOR_SIZE_COCO)
    
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
