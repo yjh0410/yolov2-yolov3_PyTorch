@@ -37,7 +37,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='YOLO Demo Detection')
 
     parser.add_argument('-v', '--version', default='yolo_v2',
-                        help='yolo_v2 and tiny_yolo_v2.')
+                        help='yolo_v2 and slim_yolo_v2.')
     parser.add_argument('--trained_model', default='weights/',
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--mode', default='image',
@@ -207,14 +207,14 @@ def run():
 
         net = myYOLOv3(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
 
-    elif args.version == 'tiny_yolo_v2':
-        from models.tiny_yolo_v2 import YOLOv2tiny
+    elif args.version == 'slim_yolo_v2':
+        from models.slim_yolo_v2 import SlimYOLOv2
         if args.setup == 'VOC':
             anchor_size = config.ANCHOR_SIZE
         else:
             anchor_size = config.ANCHOR_SIZE_COCO
 
-        net = YOLOv2tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
+        net = SlimYOLOv2(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
 
     elif args.version == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
