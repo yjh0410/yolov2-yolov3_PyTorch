@@ -216,20 +216,20 @@ HAHAHAHA!
 
 So, just have fun !
 
-# Tiny YOLOv2
-I don't reproduce official TinyYOLOv2 !
-
+# Slim YOLOv2
 I build a very simple lightweight backbone: darknet_tiny
 
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/img_file/darknet_tiny.png)
 
-I replace the darknet19 with darknet_tiny.
+I replace the darknet19 used in YOLOv2 with darknet_tiny.
 
-My TinyYOLOv2 is fast and strong. On VOC, it gets 70.7 mAP and 100+ FPS on 1660ti GPU.
+My SlimYOLOv2 is fast and strong. On VOC, it gets 70.7 mAP and 100+ FPS on 1660ti GPU.
 
 Just enjoy it.
 
-# TIny YOLOv3
+And, I'm still trying to make it faster without too much drop of precision.
+
+# Tiny YOLOv3
 I'm trying to reproduce a pytorch version of TinyYOLOv3 ...
 
 ## Installation
