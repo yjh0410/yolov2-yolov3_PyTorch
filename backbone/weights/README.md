@@ -1,5 +1,7 @@
-# darknet19, darknet53 and darknet-tiny
+# darknet19, darknet53, darknet-tiny, darknet-light
 darknet-tiny is designed by myself. It is a very simple and lightweight backbone.
+
+darknet-light is same to the backbone used in official TinyYOLOv3.
 
 For researchers in China, you can download them from BaiduYunDisk:
 
