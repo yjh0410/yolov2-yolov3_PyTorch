@@ -23,7 +23,7 @@ class YOLOv3tiny(nn.Module):
         self.scale = np.array([[[input_size[1], input_size[0], input_size[1], input_size[0]]]])
         self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
 
-        # backbone darknet-19
+        # backbone
         self.backbone = darknet_light(pretrained=trainable, hr=hr)
         
         # s = 32
