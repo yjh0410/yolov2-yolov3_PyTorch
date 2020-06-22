@@ -37,7 +37,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='YOLO Demo Detection')
 
     parser.add_argument('-v', '--version', default='yolo_v2',
-                        help='yolo_v2 and slim_yolo_v2.')
+                        help='yolo_v2 and tiny_yolo_v2.')
     parser.add_argument('--trained_model', default='weights/',
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--mode', default='image',
@@ -52,39 +52,44 @@ def parse_args():
                         type=str, help='The path to video files')
     parser.add_argument('--path_to_saveVid', default='data/video/result.avi',
                         type=str, help='The path to save the detection results video')
+    parser.add_argument('--visual_threshold', default=0.3,
+                        type=float, help='visual threshold')
     
     return parser.parse_args()
                     
 
-def vis(img, bbox_pred, scores, cls_inds, setup='VOC'):
-    if setup == 'VOC':
-        class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(20)]
-    elif setup == 'COCO':
-        class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(80)]
+def vis(img, bbox_pred, scores, cls_inds, class_color, setup='VOC', thresh=0.3):
         
     for i, box in enumerate(bbox_pred):
-        if scores[i] > 0.3:
+        if scores[i] > thresh:
             cls_indx = cls_inds[i]
+            if setup == 'VOC':
+                cls_name = VOC_CLASSES[int(cls_indx)]
+                mess = '%s: %.3f' % (cls_name, scores[i])
+            elif setup == 'COCO':
+                cls_id = coco_class_index[int(cls_indx)]
+                cls_name = coco_class_labels[cls_id]
+                mess = '%s: %.3f' % (cls_name, scores[i])
+            # bounding box
             xmin, ymin, xmax, ymax = box
             box_w = int(xmax - xmin)
             # print(xmin, ymin, xmax, ymax)
             cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_color[int(cls_indx)], 2)
             cv2.rectangle(img, (int(xmin), int(abs(ymin)-15)), (int(xmin+box_w*0.55), int(ymin)), class_color[int(cls_indx)], -1)
-            if setup == 'VOC':
-                mess = '%s: %.3f' % (VOC_CLASSES[int(cls_indx)], scores[i])
-            elif setup == 'COCO':
-                cls_id = coco_class_index[int(cls_indx)]
-                cls_name = coco_class_labels[cls_id]
-                mess = '%s: %.3f' % (cls_name, scores[i])
 
             cv2.putText(img, mess, (int(xmin), int(ymin)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
     return img
 
-def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=None, path_to_save=None, setup='VOC'):
+def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_to_vid=None, path_to_save=None, setup='VOC'):
+    if setup == 'VOC':
+        class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(20)]
+    elif setup == 'COCO':
+        class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(80)]
     # ------------------------- Camera ----------------------------
     # I'm not sure whether this 'camera' mode works ...
     if mode == 'camera':
-        cap = cv2.VideoCapture(0)
+        print('use camera !!!')
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         while True:
             ret, frame = cap.read()
             cv2.imshow('current frame', frame)
@@ -93,10 +98,12 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
             x = torch.from_numpy(transform(frame)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
             x = x.unsqueeze(0).to(device)
 
-            t0 = time.clock()
-            y = net(x)      # forward pass
-            detections = y
-            print("detection time used ", Decimal(time.clock()) - Decimal(t0), "s")
+            torch.cuda.synchronize()
+            t0 = time.time()
+            detections = net(x)      # forward pass
+            torch.cuda.synchronize()
+            t1 = time.time()
+            print("detection time used ", t1-t0, "s")
             # scale each detection back up to the image
             scale = np.array([[frame.shape[1], frame.shape[0],
                                 frame.shape[1], frame.shape[0]]])
@@ -104,25 +111,25 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
             # map the boxes to origin image scale
             bbox_pred *= scale
 
-            frame_processed = vis(frame, bbox_pred, scores, cls_inds, setup)
+            frame_processed = vis(frame, bbox_pred, scores, cls_inds, class_color, setup, thresh=thresh)
             cv2.imshow('detection result', frame_processed)
-            cv2.waitKey(0)
+            cv2.waitKey(1)
         cap.release()
         cv2.destroyAllWindows()
 
     # ------------------------- Image ----------------------------
     elif mode == 'image':
-        os.makedirs('test_results', exist_ok=True)
         for file in os.listdir(path_to_img):
-            save_path = os.path.join('test_results', file)
             img = cv2.imread(path_to_img + '/' + file, cv2.IMREAD_COLOR)
             x = torch.from_numpy(transform(img)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
             x = x.unsqueeze(0).to(device)
 
-            t0 = time.clock()
-            y = net(x)      # forward pass
-            detections = y
-            print("detection time used ", Decimal(time.clock()) - Decimal(t0), "s")
+            torch.cuda.synchronize()
+            t0 = time.time()
+            detections = net(x)      # forward pass
+            torch.cuda.synchronize()
+            t1 = time.time()
+            print("detection time used ", t1-t0, "s")
             # scale each detection back up to the image
             scale = np.array([[img.shape[1], img.shape[0],
                                 img.shape[1], img.shape[0]]])
@@ -130,9 +137,8 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
             # map the boxes to origin image scale
             bbox_pred *= scale
 
-            img_processed = vis(img, bbox_pred, scores, cls_inds, setup)
+            img_processed = vis(img, bbox_pred, scores, cls_inds, class_color=class_color, setup=setup, thresh=thresh)
             cv2.imshow('detection result', img_processed)
-            cv2.imwrite(save_path, img_processed)
             cv2.waitKey(0)
 
     # ------------------------- Video ---------------------------
@@ -149,9 +155,12 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
                 x = torch.from_numpy(transform(frame)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
                 x = x.unsqueeze(0).to(device)
 
-                y = net(x)      # forward pass
-                detections = y
-                print("detection time used ", time.time() - t0, "s")
+                torch.cuda.synchronize()
+                t0 = time.time()
+                detections = net(x)      # forward pass
+                torch.cuda.synchronize()
+                t1 = time.time()
+                print("detection time used ", t1-t0, "s")
                 # scale each detection back up to the image
                 scale = np.array([[frame.shape[1], frame.shape[0],
                                     frame.shape[1], frame.shape[0]]])
@@ -159,7 +168,7 @@ def detect(net, device, transform, mode='image', path_to_img=None, path_to_vid=N
                 # map the boxes to origin image scale
                 bbox_pred *= scale
                 
-                frame_processed = vis(frame, bbox_pred, scores, cls_inds, setup)
+                frame_processed = vis(frame, bbox_pred, scores, cls_inds, class_color=class_color, setup=setup, thresh=thresh)
                 out.write(frame_processed)
                 cv2.imshow('detection result', frame_processed)
                 cv2.waitKey(1)
@@ -178,11 +187,9 @@ def run():
         device = torch.device("cpu")
 
     if args.setup == 'VOC':
-        print('use VOC style')
         cfg = config.voc_ab
         num_classes = 20
     elif args.setup == 'COCO':
-        print('use COCO style')
         cfg = config.coco_ab
         num_classes = 80
     else:
@@ -225,17 +232,20 @@ def run():
 
         net = YOLOv3tiny(device, input_size=cfg['min_dim'], num_classes=num_classes, trainable=False, anchor_size=anchor_size)
     
-    net.load_state_dict(torch.load(args.trained_model, map_location=device))
+    net.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
     net.to(device).eval()
     print('Finished loading model!')
 
     # run
-    if args.mode == 'image':
+    if args.mode == 'camera':
         detect(net, device, BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)), 
-                    mode=args.mode, path_to_img=args.path_to_img, setup=args.setup)
+                    thresh=args.visual_threshold, mode=args.mode, setup=args.setup)
+    elif args.mode == 'image':
+        detect(net, device, BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)), 
+                    thresh=args.visual_threshold, mode=args.mode, path_to_img=args.path_to_img, setup=args.setup)
     elif args.mode == 'video':
         detect(net, device, BaseTransform(net.input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
-                    mode=args.mode, path_to_vid=args.path_to_vid, path_to_save=args.path_to_saveVid, setup=args.setup)
+                    thresh=args.visual_threshold, mode=args.mode, path_to_vid=args.path_to_vid, path_to_save=args.path_to_saveVid, setup=args.setup)
 
 
 if __name__ == '__main__':
