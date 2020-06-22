@@ -230,7 +230,16 @@ Just enjoy it.
 And, I'm still trying to make it faster without too much drop of precision.
 
 # Tiny YOLOv3
-I'm trying to reproduce a pytorch version of TinyYOLOv3 ...
+We evaluate our TinyYOLOv3 on COCO-val with inputsize 608:
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> (official) YOLOv3-tiny </th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> 33.1 </td><td bgcolor=white> - </td><td bgcolor=white>- </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> (Our) YOLOv3-tiny </th><td bgcolor=white> COCO val </td><td bgcolor=white> 15.9 </td><td bgcolor=white> 33.8 </td><td bgcolor=white> 12.8 </td><td bgcolor=white> 7.6 </td><td bgcolor=white> 17.7 </td><td bgcolor=white> 22.4 </td></tr>
+
+</table></tbody>
 
 ## Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
