@@ -212,22 +212,6 @@ def train():
                 tmp_lr = tmp_lr * 0.1
                 set_lr(optimizer, tmp_lr)
     
-        # COCO evaluation
-        if (epoch + 1) % args.eval_epoch == 0:
-            model.trainable = False
-            model.set_grid(cfg['min_dim'])
-            # evaluate
-            ap50_95, ap50 = evaluator.evaluate(model)
-            print('ap50 : ', ap50)
-            print('ap50_95 : ', ap50_95)
-            # convert to training mode.
-            model.trainable = True
-            model.set_grid(input_size)
-            model.train()
-            if args.tfboard:
-                writer.add_scalar('val/COCOAP50', ap50, epoch + 1)
-                writer.add_scalar('val/COCOAP50_95', ap50_95, epoch + 1)
-
 
         for iter_i, (images, targets) in enumerate(dataloader):
             # WarmUp strategy for learning rate
@@ -290,6 +274,21 @@ def train():
                 # I don't know how to make it suit more workers, and I'm trying to solve this question.
                 dataloader.dataset.reset_transform(SSDAugmentation(input_size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
 
+        # COCO evaluation
+        if (epoch + 1) % args.eval_epoch == 0:
+            model.trainable = False
+            model.set_grid(cfg['min_dim'])
+            # evaluate
+            ap50_95, ap50 = evaluator.evaluate(model)
+            print('ap50 : ', ap50)
+            print('ap50_95 : ', ap50_95)
+            # convert to training mode.
+            model.trainable = True
+            model.set_grid(input_size)
+            model.train()
+            if args.tfboard:
+                writer.add_scalar('val/COCOAP50', ap50, epoch + 1)
+                writer.add_scalar('val/COCOAP50_95', ap50_95, epoch + 1)
 
         if (epoch + 1) % 10 == 0:
             print('Saving state, epoch:', epoch + 1)
