@@ -61,6 +61,8 @@ For example:
 python train_voc.py -v [select a model] -hr --cuda --num_workers 8
 ```
 
+Attention ! Remember to set cuda as True (Do not omit ```--cuda```) to use GPU. 
+
 # the whole project
 In this project, you can enjoy: 
 - yolo-v2
