@@ -1,3 +1,8 @@
+# YOLOv3-SPP
+I am trying to reproduce YOLOv3 with SPP and more other modules and tricks.
+
+https://github.com/yjh0410/yolov3-plus_PyTorch
+
 # A strong YOLOv3 PyTorch
 
 Original YOLOv3:
