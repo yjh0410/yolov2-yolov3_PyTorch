@@ -1,5 +1,5 @@
 # YOLOv3-SPP and YOLOv3-Plus
-I am trying to reproduce YOLOv3 with SPP, PAN and more other modules and tricks.
+I am trying to build a better YOLOv3 with SPP, PAN and more other modules and tricks.
 
 https://github.com/yjh0410/yolov3-plus_PyTorch
 
@@ -42,41 +42,13 @@ Anyone can reproduce my results with my codes.
 
 So, just have fun !!
 
-# Before the start
-Hi, everyone !
-
-Before you start to try this excellent project, I must tell you somthing:
-
-When you run my train code, you will find it is slow. 
-
-With one TITAN RTX GPU, I spent 2 days/15 days training my YOLOv3 on VOC/COCO.
-
-Oh! Come on ! Why is it soooooooooooo slow??????????????
-
-Because the workers in my dataloader is 0 which means it uses only one thread to process input datas. 
-
-If I add more workers, it will report some errors about input size when I use multi-scale training trick.
-
-I'm still trying to solve this trouble but I know much little about multithreading ...
-
-So~
-
-If you don't plan to try multi-scale training trick, just set num_workers as 8 or more. It will run faster.
-
-For example:
-
-```Shell
-python train_voc.py -v [select a model] -hr --cuda --num_workers 8
-```
-
-Attention ! Remember to set cuda as True (Do not omit ```--cuda```) to use GPU. 
-
 # the whole project
 In this project, you can enjoy: 
-- yolo-v2
-- yolo-v3
-- tiny-yolo-v2 
-- tiny-yolo-v3(toy model, don't care~)
+- YOLOv2
+- YOLOv3
+- YOLOv3Spp
+- TinyYOLOv2 
+- TinyYOLOv3
 
 What I have to say is that I don't try to 100% reproduce the whole official YOLO project, because it is really hard to me. I have not much computation resource, so I can't train my yolov3 on COCO. It will cost more than two weeks...
 
@@ -159,7 +131,7 @@ My loss function and groundtruth creator both in the ```tools.py```, and you can
 Next, I plan to train my yolo-v2 on COCO.
 
 # YOLOv3
-Besides YOLOv2, I also try to reproduce YOLOv3. Before this, I rebuilt a darknet53 network with PyTorch and pretrained it on ImageNet, so I don't select official darknet53 model file...Oh! I forgot to you guys that my darknet19 used in my YOLOv2 is also rebuilt by myself with PyTorch. The top-1 performance of my darknet19 and darknet53 is following:
+Besides YOLOv2, I also try to reproduce YOLOv3. Before this, I rebuilt a darknet53 network with PyTorch and pretrained it on ImageNet, so I don't select official darknet53 model file...Oh! I forgot to tell you guys that my darknet19 used in my YOLOv2 is also rebuilt and trained by myself with PyTorch. The top-1 performance of my darknet19 and darknet53 is following:
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch)  </td></tr>
@@ -226,6 +198,23 @@ HAHAHAHA!
 
 So, just have fun !
 
+# YOLOv3SPP
+On COCO:
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-320</th><td bgcolor=white> COCO eval </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-416</th><td bgcolor=white> COCO eval </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-608</th><td bgcolor=white> COCO eval </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+</table></tbody>
+
+Please patiently wait ... The model is being trained ...
+
 # Slim YOLOv2
 I build a very simple lightweight backbone: darknet_tiny
 
@@ -239,15 +228,15 @@ Just enjoy it.
 
 And, I'm still trying to make it faster without too much drop of precision.
 
-# Tiny YOLOv3
+# TinyYOLOv3
 We evaluate our TinyYOLOv3 on COCO-val with inputsize 608:
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> (official) YOLOv3-tiny </th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> 33.1 </td><td bgcolor=white> - </td><td bgcolor=white>- </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> (official) TinyYOLOv3 </th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> 33.1 </td><td bgcolor=white> - </td><td bgcolor=white>- </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> (Our) YOLOv3-tiny </th><td bgcolor=white> COCO val </td><td bgcolor=white> 15.9 </td><td bgcolor=white> 33.8 </td><td bgcolor=white> 12.8 </td><td bgcolor=white> 7.6 </td><td bgcolor=white> 17.7 </td><td bgcolor=white> 22.4 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> (Our) TinyYOLOv3 </th><td bgcolor=white> COCO val </td><td bgcolor=white> 15.9 </td><td bgcolor=white> 33.8 </td><td bgcolor=white> 12.8 </td><td bgcolor=white> 7.6 </td><td bgcolor=white> 17.7 </td><td bgcolor=white> 22.4 </td></tr>
 
 </table></tbody>
 
@@ -300,8 +289,6 @@ python train_voc.py -v [select a model] -hr -ms --cuda
 
 You can run ```python train_voc.py -h``` to check all optional argument.
 
-By default, I set num_workers in pytorch dataloader as 0 to guarantee my multi-scale trick. But the trick can't work when I add more wokers. I know little about multithreading. So sad...
-
 ### COCO
 ```Shell
 python train_coco.py -v [select a model] -hr -ms --cuda
@@ -340,8 +327,6 @@ You will get a .json file which can be evaluated on COCO test server.
 
 You can run ```python train_voc.py -h``` to check all optional argument.
 
-By default, I set num_workers in pytorch dataloader as 0 to guarantee my multi-scale trick. But the trick can't work when I add more wokers. I know little about multithreading. So sad...
-
 ### Train yourself
 
 you can give a path to trained model to --resume. For example:
@@ -367,4 +352,3 @@ If you want to change input size, you need to open ```data/config.py``` and give
 ```
 'min_dim': [416, 416], -> 'min_dim': [640, 640],
 ```
-
