@@ -1,3 +1,9 @@
+# Update
+Recently, I'm trying to optimize this project. Maybe about one or more weeks, I will upload the newest
+results and provide a better version of train, test, eval codes.
+
+I wish this version of yolo can help everyone who is interested in Object Detection.
+
 # YOLOv3-SPP and YOLOv3-Plus
 I am trying to build a better YOLOv3 with SPP, PAN and more other modules and tricks.
 
