@@ -1,8 +1,12 @@
 # config.py
-import os.path
 
+train_cfg = {
+    'lr_epoch': (150, 200),
+    'max_epoch': 260
+}
 
 # single level anchor box config for VOC and COCO
+# yolo v2 and slim-yolo-v2
 ANCHOR_SIZE = [[1.19, 1.98], [2.79, 4.59], [4.53, 8.92], [8.06, 5.29], [10.32, 10.65]]
 
 ANCHOR_SIZE_COCO = [[0.53, 0.79], [1.71, 2.36], [2.89, 6.44], [6.33, 3.79], [9.03, 9.74]]
@@ -24,21 +28,4 @@ TINY_MULTI_ANCHOR_SIZE = [[34.01, 61.79], [86.94, 109.68], [93.49, 227.46],
 TINY_MULTI_ANCHOR_SIZE_COCO = [[15.09, 23.25], [46.36, 61.47],[68.41, 161.84],
                                [168.88, 93.59], [154.96, 257.45], [334.74, 302.47]]
 
-
 IGNORE_THRESH = 0.5
-
-voc_ab = {
-    'num_classes': 20,
-    'lr_epoch': (150, 200), # (60, 90, 160),
-    'max_epoch': 250,
-    'min_dim': [416, 416],
-    'name': 'VOC',
-}
-
-coco_ab = {
-    'num_classes': 80,
-    'lr_epoch': (150, 200), # (60, 90, 160),
-    'max_epoch': 260,
-    'min_dim': [608, 608],
-    'name': 'COCO',
-}

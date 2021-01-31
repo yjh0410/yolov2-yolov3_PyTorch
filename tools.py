@@ -23,6 +23,7 @@ class BCELoss(nn.Module):
         else:
             return pos_loss, neg_loss
 
+
 class MSELoss(nn.Module):
     def __init__(self,  weight=None, size_average=None, ignore_index=-100, reduce=None, reduction='mean'):
         super(MSELoss, self).__init__()
@@ -40,22 +41,7 @@ class MSELoss(nn.Module):
         else:
             return pos_loss, neg_loss
 
-class BCE_focal_loss(nn.Module):
-    def __init__(self,  weight=None, gamma=2, reduction='mean'):
-        super(BCE_focal_loss, self).__init__()
-        self.gamma = gamma
-        self.reduction = reduction
-    def forward(self, inputs, targets):
-        pos_id = (targets==1.0).float()
-        neg_id = (1 - pos_id).float()
-        pos_loss = -pos_id * (1.0-inputs)**self.gamma * torch.log(inputs + 1e-14)
-        neg_loss = -neg_id * (inputs)**self.gamma * torch.log(1.0 - inputs + 1e-14)
 
-        if self.reduction == 'mean':
-            return torch.mean(torch.sum(pos_loss+neg_loss, 1))
-        else:
-            return pos_loss+neg_loss
-  
 def generate_anchor(input_size, stride, anchor_scale, anchor_aspect):
     """
         The function is used to design anchor boxes by ourselves as long as you provide the scale and aspect of anchor boxes.
@@ -82,31 +68,6 @@ def generate_anchor(input_size, stride, anchor_scale, anchor_aspect):
             total_anchor_size.append([ab_w, ab_h])
     return total_anchor_size
 
-def get_total_anchor_size(multi_level=False, name='VOC', version=None):
-    if name == 'VOC':
-        if multi_level:
-            if version == 'yolo_v3':
-                all_anchor_size = MULTI_ANCHOR_SIZE
-            elif version == 'tiny_yolo_v3':
-                all_anchor_size = TINY_MULTI_ANCHOR_SIZE
-            else:
-                print('Unknown Version !!!')
-                exit(0)
-        else:
-            all_anchor_size = ANCHOR_SIZE
-    elif name == 'COCO':
-        if multi_level:
-            if version == 'yolo_v3':
-                all_anchor_size = MULTI_ANCHOR_SIZE_COCO
-            elif version == 'tiny_yolo_v3':
-                all_anchor_size = TINY_MULTI_ANCHOR_SIZE_COCO
-            else:
-                print('Unknown Version !!!')
-                exit(0)
-        else:
-            all_anchor_size = ANCHOR_SIZE_COCO
-
-    return all_anchor_size
 
 def compute_iou(anchor_boxes, gt_box):
     """
@@ -148,6 +109,7 @@ def compute_iou(anchor_boxes, gt_box):
     
     return IoU
 
+
 def set_anchors(anchor_size):
     """
     Input:
@@ -166,6 +128,7 @@ def set_anchors(anchor_size):
     
     return anchor_boxes
 
+
 def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
     xmin, ymin, xmax, ymax = gt_label[:-1]
     # compute the center, width and height
@@ -174,7 +137,7 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
     box_w = (xmax - xmin) * w
     box_h = (ymax - ymin) * h
 
-    if box_w < 1e-28 or box_h < 1e-28:
+    if box_w < 1. or box_h < 1.:
         # print('A dirty data !!!')
         return False    
 
@@ -235,7 +198,8 @@ def generate_txtytwth(gt_label, w, h, s, all_anchor_size):
 
         return result 
 
-def gt_creator(input_size, stride, label_lists, name='VOC', version=None):
+
+def gt_creator(input_size, stride, label_lists, anchor_size):
     """
     Input:
         input_size : list -> the size of image in the training stage.
@@ -260,7 +224,7 @@ def gt_creator(input_size, stride, label_lists, name='VOC', version=None):
     s = stride
 
     # We use anchor boxes to build training target.
-    all_anchor_size = get_total_anchor_size(name=name, version=version)
+    all_anchor_size = anchor_size
     anchor_number = len(all_anchor_size)
 
     gt_tensor = np.zeros([batch_size, hs, ws, anchor_number, 1+1+4+1+4])
@@ -288,7 +252,8 @@ def gt_creator(input_size, stride, label_lists, name='VOC', version=None):
 
     return gt_tensor
 
-def multi_gt_creator(input_size, strides, label_lists=[], name='VOC', version=None):
+
+def multi_gt_creator(input_size, strides, label_lists, anchor_size):
     """creator multi scales gt"""
     # prepare the all empty gt datas
     batch_size = len(label_lists)
@@ -297,7 +262,7 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC', version=No
     gt_tensor = []
 
     # generate gt datas
-    all_anchor_size = get_total_anchor_size(multi_level=True, name=name, version=version)
+    all_anchor_size = anchor_size
     anchor_number = len(all_anchor_size) // num_scale
     for s in strides:
         gt_tensor.append(np.zeros([batch_size, h//s, w//s, anchor_number, 1+1+4+1+4]))
@@ -312,7 +277,7 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC', version=No
             box_w = (xmax - xmin) * w
             box_h = (ymax - ymin) * h
 
-            if box_w < 1e-28 or box_h < 1e-28:
+            if box_w < 1. or box_h < 1.:
                 # print('A dirty data !!!')
                 continue    
 
@@ -408,6 +373,7 @@ def multi_gt_creator(input_size, strides, label_lists=[], name='VOC', version=No
     
     return gt_tensor
 
+
 def iou_score(bboxes_a, bboxes_b):
     """
         bbox_1 : [B*N, 4] = [x1, y1, x2, y2]
@@ -421,7 +387,8 @@ def iou_score(bboxes_a, bboxes_b):
     en = (tl < br).type(tl.type()).prod(dim=1)
     area_i = torch.prod(br - tl, 1) * en  # * ((tl < br).all())
     return area_i / (area_a + area_b - area_i)
-    
+
+
 def loss(pred_conf, pred_cls, pred_txtytwth, label, num_classes, obj_loss_f='mse'):
     if obj_loss_f == 'bce':
         # In yolov3, we use bce as conf loss_f
@@ -466,47 +433,6 @@ def loss(pred_conf, pred_cls, pred_txtytwth, label, num_classes, obj_loss_f='mse
     total_loss = conf_loss + cls_loss + txtytwth_loss
 
     return conf_loss, cls_loss, txtytwth_loss, total_loss
-
-# IoU and its a series of variants
-def IoU(pred, label):
-    """
-        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-
-        Output: IoU  -> [iou_1, iou_2, ...],    size=[B, H*W]
-    """
-
-    return
-
-def GIoU(pred, label):
-    """
-        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-
-        Output: GIoU -> [giou_1, giou_2, ...],    size=[B, H*W]
-    """
-
-    return
-
-def DIoU(pred, label):
-    """
-        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-
-        Output: DIoU -> [diou_1, diou_2, ...],    size=[B, H*W]
-    """
-
-    return
-
-def CIoU(pred, label):
-    """
-        Input: pred  -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-               label -> [xmin, ymin, xmax, ymax], size=[B, H*W, 4]
-
-        Output: CIoU -> [ciou_1, ciou_2, ...],    size=[B, H*W]
-    """
-
-    return
 
 
 if __name__ == "__main__":

@@ -285,10 +285,10 @@ def darknet53(pretrained=False, hr=False, **kwargs):
         path_to_dir = os.path.dirname(os.path.abspath(__file__))
         if hr:
             print('Loading the hi-res darknet53-448 ...')
-            model.load_state_dict(torch.load(path_to_dir + '/weights/darknet53_hr_77.76.pth', map_location='cuda'), strict=False)
+            model.load_state_dict(torch.load(path_to_dir + '/weights/darknet53/darknet53_hr_77.76.pth', map_location='cuda'), strict=False)
         else:
             print('Loading the darknet53 ...')
-            model.load_state_dict(torch.load(path_to_dir + '/weights/darknet53_75.42.pth', map_location='cuda'), strict=False)
+            model.load_state_dict(torch.load(path_to_dir + '/weights/darknet53/darknet53_75.42.pth', map_location='cuda'), strict=False)
     return model
 
 def darknet_tiny(pretrained=False, hr=False, **kwargs):

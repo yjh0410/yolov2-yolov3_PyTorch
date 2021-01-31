@@ -27,6 +27,8 @@ coco_class_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
                     46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 67,
                     70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
 
+coco_root = '/home/k303/object-detection/dataset/COCO/'
+
 
 class COCODataset(Dataset):
     """
@@ -102,6 +104,11 @@ class COCODataset(Dataset):
         return target
 
     def __getitem__(self, index):
+        img, gt, h, w = self.pull_item(index)
+
+        return img, gt
+        
+    def pull_item(self, index):
         id_ = self.ids[index]
 
         anno_ids = self.coco.getAnnIds(imgIds=[int(id_)], iscrowd=None)
@@ -157,20 +164,4 @@ class COCODataset(Dataset):
             # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
 
-        return torch.from_numpy(img).permute(2, 0, 1), target
-
-        # for label in target:
-        #     xmin, ymin, xmax, ymax, label_ind = label
-        #     xmin *= width
-        #     ymin *= height
-        #     xmax *= width
-        #     ymax *= height
-        #     cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)),(0,255,0), 2)
-        #     cls_id = self.class_ids[int(label_ind)]
-        #     cls_name = coco_class_labels[cls_id]
-        #     mess = cls_name
-        #     cv2.putText(img, mess, (int(xmin), int(ymin)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
-        # cv2.imshow('img', img)
-        # cv2.waitKey(0)
-
-        # return 0
+        return torch.from_numpy(img).permute(2, 0, 1), target, height, width

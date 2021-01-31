@@ -2,7 +2,7 @@
 Hi, guys ! 
 
 For researchers in China, you can download them from BaiduYunDisk. 
-There are 5 models including yolo-v2, yolo-v3, tiny-yolo-v2 and tiny-yolo-v3.
+There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
 
 The link is as following: 
 

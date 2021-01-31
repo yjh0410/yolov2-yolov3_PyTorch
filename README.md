@@ -53,7 +53,7 @@ In this project, you can enjoy:
 - YOLOv2
 - YOLOv3
 - YOLOv3Spp
-- TinyYOLOv2 
+- SlimYOLOv2 
 - TinyYOLOv3
 
 What I have to say is that I don't try to 100% reproduce the whole official YOLO project, because it is really hard to me. I have not much computation resource, so I can't train my yolov3 on COCO. It will cost more than two weeks...
@@ -66,6 +66,10 @@ However, I have a qeustion: Is the mAP metric really good? Does it really suit o
 
 I find higher mAP doesn't mean better visualization...so weird.
 
+# Weights
+For backbone, I provide the link to download them in ```backbone\weights\README.md```.
+
+For detectors, you can find the link to download them in ```weights\README.md```.
 
 # YOLOv2
 I really enjoy yolo. It is so amazing! So I try to reproduce it. And I think I achieve this goal:

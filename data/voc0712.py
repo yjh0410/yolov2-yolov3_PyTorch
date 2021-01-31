@@ -157,7 +157,7 @@ class VOCDetection(data.Dataset):
             PIL img
         '''
         img_id = self.ids[index]
-        return cv2.imread(self._imgpath % img_id, cv2.IMREAD_COLOR)
+        return cv2.imread(self._imgpath % img_id, cv2.IMREAD_COLOR), img_id
 
     def pull_anno(self, index):
         '''Returns the original annotation of image at index

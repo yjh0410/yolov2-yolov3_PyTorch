@@ -1,7 +1,20 @@
-from data import *
-from data.cocodataset import *
+from data import BaseTransform, VOC_ROOT, VOCDetection, coco_root, COCODataset
 import numpy as np
 import random
+import argparse
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='kmeans for anchor box')
+
+    parser.add_argument('-d', '--dataset', default='coco',
+                        help='coco, voc.')
+    parser.add_argument('-na', '--num_anchorbox', default=9, type=int,
+                        help='number of anchor box.')
+    parser.add_argument('-size', '--input_size', default=416, type=int,
+                        help='input size.')
+    return parser.parse_args()
+                    
 
 class Box():
     def __init__(self, x, y, w, h):
@@ -9,6 +22,7 @@ class Box():
         self.y = y
         self.w = w
         self.h = h
+
 
 def iou(box1, box2):
     x1, y1, w1, h1 = box1.x, box1.y, box1.w, box1.h
@@ -31,6 +45,7 @@ def iou(box1, box2):
     IoU = I / (S_1 + S_2 - I)
 
     return IoU
+
 
 def init_centroids(boxes, n_anchors):
     """
@@ -68,6 +83,7 @@ def init_centroids(boxes, n_anchors):
                 break
     return centroids
 
+
 def do_kmeans(n_anchors, boxes, centroids):
     loss = 0
     groups = []
@@ -97,6 +113,7 @@ def do_kmeans(n_anchors, boxes, centroids):
         new_centroids[i].h /= max(len(groups[i]), 1)
 
     return new_centroids, groups, loss# / len(boxes)
+
 
 def anchor_box_kmeans(total_gt_boxes, n_anchors, loss_convergence, iters, plus=True):
     """
@@ -138,18 +155,26 @@ def anchor_box_kmeans(total_gt_boxes, n_anchors, loss_convergence, iters, plus=T
     
     return centroids
 
+
 if __name__ == "__main__":
-    n_anchors = 6
+    args = parse_args()
+
+    n_anchors = args.num_anchorbox
+    size = args.input_size
+    dataset = args.dataset
+    
     loss_convergence = 1e-6
     iters_n = 1000
-    input_size = 416
-    # dataset = VOCDetection(root=VOC_ROOT,
-    #                     transform=BaseTransform([416, 416]))
-    dataset = COCODataset(
-                  data_dir='./data/COCO/',
-                  img_size=input_size,
-                  transform=BaseTransform(input_size),
-                  debug=None)
+
+    if dataset == 'voc':
+        dataset = VOCDetection(root=VOC_ROOT, transform=BaseTransform([size, size]))
+
+    elif dataset == 'coco':
+        dataset = COCODataset(
+                    data_dir=coco_root,
+                    img_size=size,
+                    transform=BaseTransform([size, size]))
+
     boxes = []
     print("The dataset size: ", len(dataset))
     print("Loading the dataset ...")
@@ -157,25 +182,28 @@ if __name__ == "__main__":
         if i % 5000 == 0:
             print('Loading datat [%d / %d]' % (i+1, len(dataset)))
 
-        # For COCO
-        img, _ = dataset.pull_image(i)
-        w, h = img.shape[1], img.shape[0]
-        annotation = dataset.pull_anno(i)
+        if dataset== 'coco':
+            # For COCO
+            img, _ = dataset.pull_image(i)
+            w, h = img.shape[1], img.shape[0]
+            annotation = dataset.pull_anno(i)
 
-        # # For VOC
-        # img = dataset.pull_image(i)
-        # w, h = img.shape[1], img.shape[0]
-        # _, annotation = dataset.pull_anno(i)
+        elif dataset == 'voc':
+            # For VOC
+            img = dataset.pull_image(i)
+            w, h = img.shape[1], img.shape[0]
+            _, annotation = dataset.pull_anno(i)
 
+        # prepare bbox datas
         for box_and_label in annotation:
             box = box_and_label[:-1]
             xmin, ymin, xmax, ymax = box
-            bw = (xmax - xmin) / w * input_size
-            bh = (ymax - ymin) / h * input_size
+            bw = (xmax - xmin) / w * size
+            bh = (ymax - ymin) / h * size
+            # check bbox
+            if bw < 1.0 or bh < 1.0:
+                continue
             boxes.append(Box(0, 0, bw, bh))
-    # for i in range(5):
-    #     w, h = 2*(i+1)+np.random.randint(5), 2*(i+1)+np.random.randint(5)
-    #     print(w, h)
-    #     boxes.append(Box(0, 0, w, h))
+
     print("Start k-means !")
     centroids = anchor_box_kmeans(boxes, n_anchors, loss_convergence, iters_n, plus=True)
