@@ -179,16 +179,16 @@ On COCO:
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-320</th><td bgcolor=white> COCO eval </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-320</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 32.78 </td><td bgcolor=white> 53.79 </td><td bgcolor=white> 33.9 </td><td bgcolor=white> 12.4 </td><td bgcolor=white> 35.5 </td><td bgcolor=white> 50.6 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-416</th><td bgcolor=white> COCO eval </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-416</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 35.66 </td><td bgcolor=white> 57.09 </td><td bgcolor=white> 37.4 </td><td bgcolor=white> 16.8 </td><td bgcolor=white> 38.1 </td><td bgcolor=white> 50.7 </td></tr>
 
 
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-608</th><td bgcolor=white> COCO eval </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv3Spp-608</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 37.52 </td><td bgcolor=white> 59.44 </td><td bgcolor=white> 39.3 </td><td bgcolor=white> 21.5 </td><td bgcolor=white> 40.6 </td><td bgcolor=white> 49.6 </td></tr>
 
 </table></tbody>
 
-Please patiently wait ... The model is being trained ...
+My YOLOv3SPP is not better than my YOLOv3. It is a little confusing ...
 
 # Slim YOLOv2
 I build a very simple lightweight backbone: darknet_tiny
