@@ -116,7 +116,12 @@ class COCOAPIEvaluator():
             cocoEval.evaluate()
             cocoEval.accumulate()
             cocoEval.summarize()
-            return cocoEval.stats[0], cocoEval.stats[1]
+
+            ap50, ap50_95 = cocoEval.stats[0], cocoEval.stats[1]
+            print('ap50_95 : ', ap50_95)
+            print('ap50 : ', ap50)
+
+            return ap50, ap50_95
         else:
             return 0, 0
 

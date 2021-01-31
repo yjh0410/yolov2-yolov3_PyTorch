@@ -12,7 +12,7 @@ import time
 
 parser = argparse.ArgumentParser(description='YOLO Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolo_v2, yolo_v3, slim_yolo_v2, tiny_yolo_v3')
+                    help='yolo_v2, yolo_v3, yolo_v3_spp, slim_yolo_v2, tiny_yolo_v3')
 parser.add_argument('-d', '--dataset', default='voc',
                     help='voc, coco-val.')
 parser.add_argument('-size', '--input_size', default=416, type=int,
@@ -128,6 +128,11 @@ if __name__ == '__main__':
         from models.yolo_v3 import myYOLOv3
         anchor_size = MULTI_ANCHOR_SIZE if args.dataset == 'voc' else MULTI_ANCHOR_SIZE_COCO
         net = myYOLOv3(device, input_size=input_size, num_classes=num_classes, conf_thresh=args.conf_thresh, nms_thresh=args.nms_thresh, anchor_size=anchor_size)
+    
+    elif args.version == 'yolo_v3_spp':
+        from models.yolo_v3_spp import myYOLOv3Spp
+        anchor_size = MULTI_ANCHOR_SIZE if args.dataset == 'voc' else MULTI_ANCHOR_SIZE_COCO
+        net = myYOLOv3Spp(device, input_size=input_size, num_classes=num_classes, conf_thresh=args.conf_thresh, nms_thresh=args.nms_thresh, anchor_size=anchor_size)
     
     elif args.version == 'slim_yolo_v2':
         from models.slim_yolo_v2 import SlimYOLOv2 
