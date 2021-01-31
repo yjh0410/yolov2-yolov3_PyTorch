@@ -11,44 +11,7 @@ https://github.com/yjh0410/yolov3-plus_PyTorch
 
 I sincerely recommend everyone to use my new project. It is better~
 
-
-# A strong YOLOv3 PyTorch
-
-Original YOLOv3:
-
-<table><tbody>
-<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3-320</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 28.2 </td><td bgcolor=white> 51.5 </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3-416</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 31.0 </td><td bgcolor=white> 55.3 </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3-608</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 33.0 </td><td bgcolor=white> 57.0 </td><td bgcolor=white> 34.4 </td><td bgcolor=white> 18.3 </td><td bgcolor=white> 35.4 </td><td bgcolor=white> 41.9 </td></tr>
-</table></tbody>
-
-Our YOLOv3_PyTorch:
-
-<table><tbody>
-<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3-320</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 33.1 </td><td bgcolor=white> 54.1 </td><td bgcolor=white> 34.5 </td><td bgcolor=white> 12.1 </td><td bgcolor=white> 34.5 </td><td bgcolor=white> 49.6 </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3-416</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 36.0 </td><td bgcolor=white> 57.4 </td><td bgcolor=white> 37.0 </td><td bgcolor=white> 16.3 </td><td bgcolor=white> 37.5 </td><td bgcolor=white> 51.1 </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv3-608</th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> 37.6 </td><td bgcolor=white> 59.4 </td><td bgcolor=white> 39.9 </td><td bgcolor=white> 20.4 </td><td bgcolor=white> 39.9 </td><td bgcolor=white> 48.2 </td></tr>
-</table></tbody>
-
-Stronger and better, right?
-
-Without any bells and whistles, my YOLOv3 exceeds original YOLOv3.
-
-I just trained once as I have only one GPU.
-
-Anyone can reproduce my results with my codes.
-
-So, just have fun !!
-
-# the whole project
+# This project
 In this project, you can enjoy: 
 - YOLOv2
 - YOLOv3
@@ -72,7 +35,31 @@ For backbone, I provide the link to download them in ```backbone\weights\README.
 For detectors, you can find the link to download them in ```weights\README.md```.
 
 # YOLOv2
-I really enjoy yolo. It is so amazing! So I try to reproduce it. And I think I achieve this goal:
+
+## Tricks
+Tricks in official paper:
+- [x] batch norm
+- [x] hi-res classifier
+- [x] convolutional
+- [x] anchor boxes
+- [x] new network
+- [x] dimension priors
+- [x] location prediction
+- [x] passthrough
+- [x] multi-scale
+- [x] hi-red detector
+
+First of all, I reproduce the backbone darknet19 on ImageNet.
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch)  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 224 </td><td bgcolor=white> 72.9 </td><td bgcolor=white> 72.96 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 448 </td><td bgcolor=white> 76.5 </td><td bgcolor=white> 75.52 </td></tr>
+</table></tbody>
+
+Not bad, right?
+
+Then I train my YOLOv2 on VOC dataset. I really enjoy yolo. It is so amazing! I think I have achieved this goal:
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch) 160peochs </td><td bgcolor=white> Ours (pytorch) 250epochs </td></tr>
@@ -112,22 +99,6 @@ COCO:
 I train my YOLOv2 with 250 epochs on COCO. From the above table, my YOLOv2 is better, right?
 
 
-Just enjoy it !
-
-
-## Tricks
-Tricks in official paper:
-- [x] batch norm
-- [x] hi-res classifier
-- [x] convolutional
-- [x] anchor boxes
-- [x] new network
-- [x] dimension priors
-- [x] location prediction
-- [x] passthrough
-- [x] multi-scale
-- [x] hi-red detector
-
 In TITAN Xp, my yolo-v2 runs at 100+ FPS, so it's very fast. I have no any TITAN X GPU, and I can't run my model in a X GPU. Sorry, guys~
 
 Before I tell you how to use this project, I must say one important thing about difference between origin yolo-v2 and mine:
@@ -138,22 +109,18 @@ So I don't write data augmentation by myself. I'm a little lazy~~
 
 My loss function and groundtruth creator both in the ```tools.py```, and you can try to change any parameters to improve the model.
 
-Next, I plan to train my yolo-v2 on COCO.
-
 # YOLOv3
-Besides YOLOv2, I also try to reproduce YOLOv3. Before this, I rebuilt a darknet53 network with PyTorch and pretrained it on ImageNet, so I don't select official darknet53 model file...Oh! I forgot to tell you guys that my darknet19 used in my YOLOv2 is also rebuilt and trained by myself with PyTorch. The top-1 performance of my darknet19 and darknet53 is following:
+First of all, I try to reproduce darknet53 on ImageNet:
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch)  </td></tr>
-<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 224 </td><td bgcolor=white> 72.9 </td><td bgcolor=white> 72.96 </td></tr>
-<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 448 </td><td bgcolor=white> 76.5 </td><td bgcolor=white> 75.52 </td></tr>
 <tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 224 </td><td bgcolor=white> 77.2 </td><td bgcolor=white> 75.42 </td></tr>
 <tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 448 </td><td bgcolor=white> - </td><td bgcolor=white> 77.76 </td></tr>
 </table></tbody>
 
-Looks good !
+Not so bad, right?
 
-I have only one GPU meaning training YOLOv3 on COCO will cost my lots of time(more than two weeks), so I only train my YOLOv3 on VOC. The resule is shown:
+Then, I train my YOLOv3 on VOC:
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch) 250epochs </td></tr>
@@ -203,8 +170,6 @@ I also visualize some detection results whose score is over 0.3 on COCO 2017-val
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004862.jpg)
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004985.jpg)
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004988.jpg)
-
-HAHAHAHA!
 
 So, just have fun !
 
@@ -256,7 +221,6 @@ We evaluate our TinyYOLOv3 on COCO-val with inputsize 608:
 - opencv-python, python3.6/3.7
 
 ## Dataset
-As for now, I only train and test on PASCAL VOC2007 and 2012. 
 
 ### VOC Dataset
 I copy the download files from the following excellent project:
@@ -294,71 +258,43 @@ Just run ```sh data/scripts/COCO2017.sh```. You will get COCO train2017, val2017
 ## Train
 ### VOC
 ```Shell
-python train_voc.py -v [select a model] -hr -ms --cuda
+python train.py -d voc --cuda -v [select a model] -hr -ms
 ```
 
-You can run ```python train_voc.py -h``` to check all optional argument.
+You can run ```python train.py -h``` to check all optional argument.
 
 ### COCO
 ```Shell
-python train_coco.py -v [select a model] -hr -ms --cuda
+python train.py -d coco --cuda -v [select a model] -hr -ms
 ```
 
 
 ## Test
 ### VOC
 ```Shell
-python test_voc.py -v [select a model] --trained_model [ Please input the path to model dir. ] --cuda
+python test.py -d voc --cuda -v [select a model] --trained_model [ Please input the path to model dir. ]
 ```
 
 ### COCO
 ```Shell
-python test_coco.py -v [select a model] --trained_model [ Please input the path to model dir. ] --cuda
+python test.py -d coco-val --cuda -v [select a model] --trained_model [ Please input the path to model dir. ]
 ```
 
 
 ## Evaluation
 ### VOC
 ```Shell
-python eval_voc.py -v [select a model] --train_model [ Please input the path to model dir. ] --cuda
+python eval.py -d voc --cuda -v [select a model] --train_model [ Please input the path to model dir. ]
 ```
 
 ### COCO
 To run on COCO_val:
 ```Shell
-python eval_coco.py -v [select a model] --train_model [ Please input the path to model dir. ] --cuda
+python eval.py -d coco-val --cuda -v [select a model] --train_model [ Please input the path to model dir. ]
 ```
 
 To run on COCO_test-dev(You must be sure that you have downloaded test2017):
 ```Shell
-python eval_coco.py -v [select a model] --train_model [ Please input the path to model dir. ] --cuda -t
+python eval.py -d coco-test --cuda -v [select a model] --train_model [ Please input the path to model dir. ]
 ```
 You will get a .json file which can be evaluated on COCO test server.
-
-You can run ```python train_voc.py -h``` to check all optional argument.
-
-### Train yourself
-
-you can give a path to trained model to --resume. For example:
-
-```Shell
-python train_voc.py -v yolo_v3 -ms --cuda --resume weights/coco/yolo_v3/yolo_v3_260epoch_416_57.6_36.0.pth
-```
-
-Remember, you need to change the name of pred layer in my YOLOv3 model code file. For example:
-
-```Shell
-self.pred_1 -> self.pred_1_1
-self.pred_2 -> self.pred_2_1
-self.pred_3 -> self.pred_3_1
-```
-
-Otherwise, there will be some errors~
-
-Remember again!
-
-If you want to change input size, you need to open ```data/config.py``` and give a new size to ```'min_dim'```. For example:
-
-```
-'min_dim': [416, 416], -> 'min_dim': [640, 640],
-```
