@@ -88,7 +88,6 @@ def train():
     print('Model: ', model_name)
 
     # load model and config file
-    print('Loading model: ', model_name)
     if model_name == 'yolov2_d19':
         from models.yolov2_d19 import YOLOv2D19 as yolo_net
         cfg = config.yolov2_d19_cfg
