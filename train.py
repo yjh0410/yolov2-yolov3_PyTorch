@@ -11,7 +11,11 @@ import torch
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
-from data import *
+from data import VOC_CLASSES, VOC_ROOT, VOCDetection
+from data import coco_root, COCODataset
+from data import config
+from data import BaseTransform, detection_collate
+
 import tools
 
 from utils.augmentations import SSDAugmentation
@@ -21,7 +25,7 @@ from utils.vocapi_evaluator import VOCAPIEvaluator
 def parse_args():
     parser = argparse.ArgumentParser(description='YOLO Detection')
     parser.add_argument('-v', '--version', default='yolo_v2',
-                        help='yolo_v2, yolo_v3, yolo_v3_spp, slim_yolo_v2, tiny_yolo_v3')
+                        help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_x, yolov3_tiny')
     parser.add_argument('-d', '--dataset', default='voc',
                         help='voc or coco')
     parser.add_argument('-hr', '--high_resolution', action='store_true', default=False,
@@ -66,7 +70,25 @@ def parse_args():
 
 def train():
     args = parse_args()
+    print("Setting Arguments.. : ", args)
+    print("----------------------------------------------------------")
+    # config file
+    model_name = args.version
+    if model_name == 'yolov2_d19':
+        cfg = config.yolov2_d19_train_cfg
+    elif model_name == 'yolov2_r50':
+        cfg = config.yolov2_r50_train_cfg
+    elif model_name == 'yolov2_slim':
+        cfg = config.yolov2_slim_train_cfg
+    elif model_name == 'yolov3' or model_name == 'yolov3_spp':
+        cfg = config.yolov3_d53_train_cfg
+    elif model_name == 'yolov3_x':
+        cfg = config.yolov3_cspd53_train_cfg
+    elif model_name == 'yolov3_tiny':
+        cfg = config.yolov3tiny_train_cfg
 
+
+    # path to save model
     path_to_save = os.path.join(args.save_folder, args.dataset, args.version)
     os.makedirs(path_to_save, exist_ok=True)
 
@@ -96,10 +118,6 @@ def train():
 
     cfg = train_cfg
     # dataset and evaluator
-    print("Setting Arguments.. : ", args)
-    print("----------------------------------------------------------")
-    print('Loading the dataset...')
-
     if args.dataset == 'voc':
         data_dir = VOC_ROOT
         num_classes = 20
