@@ -81,21 +81,40 @@ def train():
         device = torch.device("cpu")
 
     model_name = args.version
-    print('Model: ' model_name)
+    print('Model: ', model_name)
 
-    # config file
+    # load model and config file
+    print('Loading model: ', model_name)
     if model_name == 'yolov2_d19':
-        cfg = config.yolov2_d19_train_cfg
+        from models.yolov2_d19 import YOLOv2D19 as yolo_net
+        cfg = config.yolov2_d19_cfg
+
     elif model_name == 'yolov2_r50':
-        cfg = config.yolov2_r50_train_cfg
+        from models.yolov2_r50 import YOLOv2R50 as yolo_net
+        cfg = config.yolov2_r50_cfg
+
     elif model_name == 'yolov2_slim':
-        cfg = config.yolov2_slim_train_cfg
-    elif model_name == 'yolov3' or model_name == 'yolov3_spp':
-        cfg = config.yolov3_d53_train_cfg
+        from models.yolov2_slim import YOLOv2Slim as yolo_net
+        cfg = config.yolov2_slim_cfg
+
+    elif model_name == 'yolov3':
+        from models.yolov3 import YOLOv3 as yolo_net
+        cfg = config.yolov3_d53_cfg
+
+    elif model_name == 'yolov3_spp':
+        from models.yolov3_spp import YOLOv3Spp as yolo_net
+        cfg = config.yolov3_d53_cfg
+
     elif model_name == 'yolov3_x':
-        cfg = config.yolov3_cspd53_train_cfg
+        from models.yolov3_x import YOLOv3X as yolo_net
+        cfg = config.yolov3_cspd53_cfg
+
     elif model_name == 'yolov3_tiny':
-        cfg = config.yolov3tiny_train_cfg
+        from models.yolov3_tiny import YOLOv3tiny as yolo_net
+        cfg = config.yolov3tiny_cfg
+    else:
+        print('Unknown model name...')
+        exit(0)
 
     # path to save model
     path_to_save = os.path.join(args.save_folder, args.dataset, args.version)
@@ -136,7 +155,7 @@ def train():
         num_classes = 80
         dataset = COCODataset(
                     data_dir=data_dir,
-                    img_size=train_size[0],
+                    img_size=train_size,
                     transform=SSDAugmentation(train_size),
                     debug=args.debug)
 
@@ -158,7 +177,7 @@ def train():
 
     # dataloader
     dataloader = torch.utils.data.DataLoader(
-                    dataset, 
+                    dataset=dataset, 
                     batch_size=args.batch_size, 
                     shuffle=True, 
                     collate_fn=detection_collate,
@@ -167,73 +186,14 @@ def train():
                     )
 
     # build model
-    if model_name == 'yolov2_d19':
-        from models.yolov2_d19 import YOLOv2D19
-        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
-        # model
-        yolo_net = YOLOv2D19(device=device, 
-                             input_size=train_size, 
-                             num_classes=num_classes, 
-                             trainable=True, 
-                             anchor_size=anchor_size, 
-                             hr=hr)
-        print('Let us train yolov2_d19... ')
-
-    elif model_name == 'yolov2_r50':
-        from models.yolov2_r50 import YOLOv2R50
-        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
-        # model
-        yolo_net = YOLOv2R50(device=device, 
-                             input_size=train_size, 
-                             num_classes=num_classes, 
-                             trainable=True, 
-                             anchor_size=anchor_size, 
-                             hr=hr)
-        print('Let us train yolov2_r50... ')
-
-    elif model_name == 'yolov3':
-        from models.yolov3 import YOLOv3
-        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
-        # model
-        yolo_net = YOLOv3(device=device, 
-                          input_size=train_size, 
-                          num_classes=num_classes, 
-                          trainable=True, 
-                          anchor_size=anchor_size, 
-                          hr=hr)
-        print('Let us train yolov3...')
-
-    elif model_name == 'yolov3_spp':
-        from models.yolov3_spp import YOLOv3Spp
-        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
-        # model
-        yolo_net = YOLOv3Spp(device=device, 
-                             input_size=train_size, 
-                             num_classes=num_classes, 
-                             trainable=True, 
-                             anchor_size=anchor_size, 
-                             hr=hr)
-        print('Let us train yolov3_spp...')
-
-    elif model_name == 'slim_yolo_v2':
-        from models.slim_yolo_v2 import SlimYOLOv2
-        anchor_size = ANCHOR_SIZE if args.dataset == 'voc' else ANCHOR_SIZE_COCO
-    
-        yolo_net = SlimYOLOv2(device, input_size=train_size, num_classes=num_classes, trainable=True, anchor_size=anchor_size, hr=hr)
-        print('Let us train slim_yolo_v2 on the %s dataset ......' % (args.dataset))
-
-    elif model_name == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import YOLOv3tiny
-        anchor_size = TINY_MULTI_ANCHOR_SIZE if args.dataset == 'voc' else TINY_MULTI_ANCHOR_SIZE_COCO
-    
-        yolo_net = YOLOv3tiny(device, input_size=train_size, num_classes=num_classes, trainable=True, anchor_size=anchor_size, hr=hr)
-        print('Let us train tiny_yolo_v3 on the %s dataset ......' % (args.dataset))
-
-    else:
-        print('Unknown version !!!')
-        exit()
-
-    model = yolo_net
+    anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+    net = yolo_net(device=device, 
+                   input_size=train_size, 
+                   num_classes=num_classes, 
+                   trainable=True, 
+                   anchor_size=anchor_size, 
+                   hr=hr)
+    model = net
     model.to(device).train()
 
     # use tfboard
@@ -263,34 +223,19 @@ def train():
     max_epoch = cfg['max_epoch']
     epoch_size = len(dataset) // args.batch_size
 
-    # start training loop
     t0 = time.time()
-
+    # start training loop
     for epoch in range(args.start_epoch, max_epoch):
-
-        # use cos lr
-        if args.cos and epoch > 20 and epoch <= max_epoch - 20:
-            # use cos lr
-            tmp_lr = 0.00001 + 0.5*(base_lr-0.00001)*(1+math.cos(math.pi*(epoch-20)*1./ (max_epoch-20)))
-            set_lr(optimizer, tmp_lr)
-
-        elif args.cos and epoch > max_epoch - 20:
-            tmp_lr = 0.00001
-            set_lr(optimizer, tmp_lr)
-        
         # use step lr
-        else:
-            if epoch in cfg['lr_epoch']:
-                tmp_lr = tmp_lr * 0.1
-                set_lr(optimizer, tmp_lr)
+        if epoch in cfg['lr_epoch']:
+            tmp_lr = tmp_lr * 0.1
+            set_lr(optimizer, tmp_lr)
     
-
         for iter_i, (images, targets) in enumerate(dataloader):
             # WarmUp strategy for learning rate
             if not args.no_warm_up:
                 if epoch < args.wp_epoch:
                     tmp_lr = base_lr * pow((iter_i+epoch*epoch_size)*1. / (args.wp_epoch*epoch_size), 4)
-                    # tmp_lr = 1e-6 + (base_lr-1e-6) * (iter_i+epoch*epoch_size) / (epoch_size * (args.wp_epoch))
                     set_lr(optimizer, tmp_lr)
 
                 elif epoch == args.wp_epoch and iter_i == 0:
@@ -303,8 +248,8 @@ def train():
             # multi-scale trick
             if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
                 # randomly choose a new size
-                size = random.randint(10, 19) * 32
-                train_size = [size, size]
+                r = cfg['random_size_range']
+                train_size = random.randint(r[0], r[1]) * 32
                 model.set_grid(train_size)
             if args.multi_scale:
                 # interpolate
@@ -312,22 +257,25 @@ def train():
             
             # make labels
             targets = [label.tolist() for label in targets]
-            if model_name == 'yolo_v2' or model_name == 'slim_yolo_v2':
+            if model_name == 'yolov2_d19' or model_name == 'yolov2_r50' or model_name == 'yolov2_slim':
                 targets = tools.gt_creator(input_size=train_size, 
-                                           stride=yolo_net.stride, 
+                                           stride=net.stride, 
                                            label_lists=targets, 
                                            anchor_size=anchor_size
                                            )
             else:
                 targets = tools.multi_gt_creator(input_size=train_size, 
-                                                 strides=yolo_net.stride, 
+                                                 strides=net.stride, 
                                                  label_lists=targets, 
                                                  anchor_size=anchor_size
                                                  )
             targets = torch.tensor(targets).float().to(device)
 
-            # forward and loss
-            conf_loss, cls_loss, txtytwth_loss, total_loss = model(images, target=targets)
+            # forward
+            conf_loss, cls_loss, bbox_loss, iou_loss = model(images, target=targets)
+
+            # compute loss
+            total_loss = conf_loss + cls_loss + bbox_loss + iou_loss
 
             # backprop
             total_loss.backward()        
@@ -338,15 +286,22 @@ def train():
             if iter_i % 10 == 0:
                 if args.tfboard:
                     # viz loss
-                    writer.add_scalar('object loss', conf_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('class loss', cls_loss.item(), iter_i + epoch * epoch_size)
-                    writer.add_scalar('local loss', txtytwth_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('conf loss',  conf_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('cls loss',   cls_loss.item(),  iter_i + epoch * epoch_size)
+                    writer.add_scalar('bbox loss',  bbox_loss.item(), iter_i + epoch * epoch_size)
+                    writer.add_scalar('iou loss',   iou_loss.item(),  iter_i + epoch * epoch_size)
                 
                 t1 = time.time()
                 print('[Epoch %d/%d][Iter %d/%d][lr %.6f]'
-                    '[Loss: obj %.2f || cls %.2f || bbox %.2f || total %.2f || size %d || time: %.2f]'
+                    '[Loss: obj %.2f || cls %.2f || bbox %.2f || iou %.2f || total %.2f || size %d || time: %.2f]'
                         % (epoch+1, max_epoch, iter_i, epoch_size, tmp_lr,
-                            conf_loss.item(), cls_loss.item(), txtytwth_loss.item(), total_loss.item(), train_size[0], t1-t0),
+                            conf_loss.item(), 
+                            cls_loss.item(), 
+                            bbox_loss.item(), 
+                            iou_loss.item(),
+                            total_loss.item(), 
+                            train_size, 
+                            t1-t0),
                         flush=True)
 
                 t0 = time.time()

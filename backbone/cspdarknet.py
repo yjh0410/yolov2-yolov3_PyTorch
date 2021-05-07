@@ -88,17 +88,13 @@ class CSPDarknet53(nn.Module):
 
 
     def forward(self, x, targets=None):
-        x = self.layer_1(x)
-        x = self.layer_2(x)
-        x = self.layer_3(x)
-        x = self.layer_4(x)
-        x = self.layer_5(x)
+        c1 = self.layer_1(x)
+        c2 = self.layer_2(c1)
+        c3 = self.layer_3(c2)
+        c4 = self.layer_4(c3)
+        c5 = self.layer_5(c4)
 
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-
-        return x
+        return c3, c4, c5
 
 
 def cspdarknet53(pretrained=False, hr=False, **kwargs):

@@ -1,7 +1,7 @@
 # config.py
 
 # YOLOv2 with darknet-19
-yolov2_d19_train_cfg = {
+yolov2_d19_cfg = {
     # network
     'backbone': 'd19',
     # for multi-scale trick
@@ -18,7 +18,7 @@ yolov2_d19_train_cfg = {
 }
 
 # YOLOv2 with resnet-50
-yolov2_r50_train_cfg = {
+yolov2_r50_cfg = {
     # network
     'backbone': 'r50',
     # for multi-scale trick
@@ -35,7 +35,7 @@ yolov2_r50_train_cfg = {
 }
 
 # YOLOv2Slim
-yolov2_slim_train_cfg = {
+yolov2_slim_cfg = {
     # network
     'backbone': 'dtiny',
     # for multi-scale trick
@@ -52,7 +52,7 @@ yolov2_slim_train_cfg = {
 }
 
 # YOLOv3 / YOLOv3Spp
-yolov3_d53_train_cfg = {
+yolov3_d53_cfg = {
     # network
     'backbone': 'd53',
     # for multi-scale trick
@@ -73,7 +73,7 @@ yolov3_d53_train_cfg = {
 }
 
 # YOLOv3X
-yolov3_cspd53_train_cfg = {
+yolov3_cspd53_cfg = {
     # network
     'backbone': 'cspd53',
     # for multi-scale trick
@@ -95,7 +95,7 @@ yolov3_cspd53_train_cfg = {
 }
 
 # YOLOv3Tiny
-yolov3_tiny_train_cfg = {
+yolov3_tiny_cfg = {
     # network
     'backbone': 'd-light',
     # for multi-scale trick

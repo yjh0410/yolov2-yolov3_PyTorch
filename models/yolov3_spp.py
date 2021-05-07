@@ -18,7 +18,7 @@ class YOLOv3Spp(nn.Module):
         self.nms_thresh = nms_thresh
         self.stride = [8, 16, 32]
         self.anchor_size = torch.tensor(anchor_size).view(3, len(anchor_size) // 3, 2)
-        self.anchor_number = self.anchor_size.size(1)
+        self.num_anchors = self.anchor_size.size(1)
 
         self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid(input_size)
 
@@ -30,9 +30,9 @@ class YOLOv3Spp(nn.Module):
             SPP(),
             Conv(1024*4, 512, k=1),
             Conv(512, 1024, k=3, p=1),
-            Conv(1024, 512, 1),
-            Conv(512, 1024, 3, p=1),
-            Conv(1024, 512, 1)
+            Conv(1024, 512, k=1),
+            Conv(512, 1024, k=3, p=1),
+            Conv(1024, 512, k=1)
         )
         self.conv_1x1_3 = Conv(512, 256, k=1)
         self.extra_conv_3 = Conv(512, 1024, k=3, p=1)
@@ -292,15 +292,21 @@ class YOLOv3Spp(nn.Module):
         else:
             txtytwth_pred = txtytwth_pred.view(B, HW, self.num_anchors, 4)
             with torch.no_grad():
-                # batch size = 1                
-                all_obj = torch.sigmoid(conf_pred)[0]           # 0 is because that these is only 1 batch.
-                all_bbox = torch.clamp((self.decode_boxes(txtytwth_pred) / self.input_size)[0], 0., 1.)
-                all_class = (torch.softmax(cls_pred[0, :, :], dim=1) * all_obj)
-                # separate box pred and class conf
-                all_class = all_class.to('cpu').numpy()
-                all_bbox = all_bbox.to('cpu').numpy()
+                # batch size = 1
+                # 测试时，笔者默认batch是1，
+                # 因此，我们不需要用batch这个维度，用[0]将其取走。
+                # [B, H*W*num_anchor, 1] -> [H*W*num_anchor, 1]
+                conf_pred = torch.sigmoid(conf_pred)[0]
+                # [B, H*W*num_anchor, 4] -> [H*W*num_anchor, 4]
+                bboxes = torch.clamp((self.decode_boxes(txtytwth_pred) / self.input_size)[0], 0., 1.)
+                # [B, H*W*num_anchor, C] -> [H*W*num_anchor, C], 
+                scores = torch.softmax(cls_pred[0, :, :], dim=1) * conf_pred
 
-                bboxes, scores, cls_inds = self.postprocess(all_bbox, all_class)
+                # 将预测放在cpu处理上，以便进行后处理
+                scores = scores.to('cpu').numpy()
+                bboxes = bboxes.to('cpu').numpy()
 
-                # print(len(all_boxes))
+                # 后处理
+                bboxes, scores, cls_inds = self.postprocess(bboxes, scores)
+
                 return bboxes, scores, cls_inds

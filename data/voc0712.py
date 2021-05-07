@@ -27,7 +27,7 @@ VOC_CLASSES = (  # always index 0
 path_to_dir = osp.dirname(osp.abspath(__file__))
 VOC_ROOT = path_to_dir + "/VOCdevkit/"
 
-VOC_ROOT = "/home/k303/object-detection/dataset/VOCdevkit/"
+VOC_ROOT = "/home/jxk/object-detection/dataset/VOCdevkit/"
 
 
 class VOCAnnotationTransform(object):
