@@ -13,9 +13,11 @@ In this project, you can enjoy:
 
 I just want to provide a good YOLO project for everyone who is interested in Object Detection.
 # Weights
-For backbone, I provide the link to download them in ```backbone\weights\README.md```.
+You can download all my models from my BaiDuYunDisk.
 
-For detectors, you can find the link to download them in ```weights\README.md```.
+Link: https://pan.baidu.com/s/1tSylvzOVFReUAvaAxKRSwg 
+
+Password d266
 
 # DarkNet-19, DarkNet-53, CSPDarkNet-53
 First of all, I reproduce the backbones used in YOLO.
@@ -28,16 +30,6 @@ First of all, I reproduce the backbones used in YOLO.
 <tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 448 </td><td bgcolor=white> 75.52 </td></tr>
 </table></tbody>
 
-For researchers in China, you can download darknet-19 pretrained model from my BaiduYunDisk:
-
-link：https://pan.baidu.com/s/1Rm87Fcj1RXZFmeTUrDWANA 
-
-password：qgzn
-
-Also, you can download them from Google Drive:
-
-link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
-
 ## DarkNet-53
 
 <table><tbody>
@@ -45,17 +37,6 @@ link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?u
 <tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 224 </td><td bgcolor=white> 75.42 </td></tr>
 <tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 448 </td><td bgcolor=white> 77.76 </td></tr>
 </table></tbody>
-
-For researchers in China, you can download darknet-53 pretrained model from my BaiduYunDisk:
-
-link：https://pan.baidu.com/s/1Rm87Fcj1RXZFmeTUrDWANA 
-
-password：qgzn
-
-Also, you can download them from Google Drive:
-
-link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
-
 
 ## CSPDarkNet-53
 
@@ -65,14 +46,6 @@ link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?u
 <tr><th align="left" bgcolor=#f8f8f8> cspdarknet53</th><td bgcolor=white> 224 </td><td bgcolor=white> 75.7 </td></tr>
 
 <tr><th align="left" bgcolor=#f8f8f8> cspdarknet53-448 </th><td bgcolor=white> 448 </td><td bgcolor=white> 76.9 </td></tr>
-</table></tbody>
-
-Everyone can download the pretrained model from my BaiDuYunDisk:
-
-link: https://pan.baidu.com/s/1-_-CkNDTG-UMtWY2bE-Zjw 
-
-password: pg4o 
-
 </table></tbody>
 
 # YOLOv2
@@ -139,17 +112,6 @@ So I don't write data augmentation by myself. I'm a little lazy~~
 
 My loss function and groundtruth creator both in the ```tools.py```, and you can try to change any parameters to improve the model.
 
-### YOLOv2-d19 model
-For researchers in China, you can download them from BaiduYunDisk. 
-There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
-
-The link is as following: 
-
-link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
-
-password: 5c8h 
-
-
 ## YOLOv2 with ResNet-50
 
 I replace darknet-19 with resnet-50 and get a better result on COCO-val
@@ -167,13 +129,6 @@ I replace darknet-19 with resnet-50 and get a better result on COCO-val
 
 <tr><th align="left" bgcolor=#f8f8f8> Our YOLOv2-608</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 29.2 </td><td bgcolor=white> 51.6 </td><td bgcolor=white> 29.1 </td><td bgcolor=white> 13.6 </td><td bgcolor=white> 36.8 </td><td bgcolor=white> 40.5 </td></tr>
 </table></tbody>
-
-### YOLOv2-r50 model
-Everyone can download my model files from BaiduYunDisk:
-
-Link: https://pan.baidu.com/s/1NmdqPwAmirknO5J__lg5Yw 
-
-Password: hlt6 
 
 # YOLOv3
 
@@ -230,17 +185,6 @@ I also visualize some detection results whose score is over 0.3 on COCO 2017-val
 
 So, just have fun !
 
-### YOLOv3 model
-For researchers in China, you can download them from BaiduYunDisk. 
-There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
-
-The link is as following: 
-
-link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
-
-password: 5c8h 
-
-
 # YOLOv3SPP
 On COCO:
 
@@ -258,17 +202,6 @@ On COCO:
 
 My YOLOv3SPP is not better than my YOLOv3. It is a little confusing ...
 
-### YOLOv3Spp model
-For researchers in China, you can download them from BaiduYunDisk. 
-There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
-
-The link is as following: 
-
-link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
-
-password: 5c8h 
-
-
 # YOLOv2Slim
 I build a very simple lightweight backbone: darknet_tiny
 
@@ -282,17 +215,6 @@ Just enjoy it.
 
 And, I'm still trying to make it faster without too much drop of precision.
 
-### YOLOv2Slim model
-For researchers in China, you can download them from BaiduYunDisk. 
-There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
-
-The link is as following: 
-
-link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
-
-password: 5c8h 
-
-
 # YOLOv3Tiny
 We evaluate our YOLOv3Tiny on COCO-val with inputsize 608:
 
@@ -304,17 +226,6 @@ We evaluate our YOLOv3Tiny on COCO-val with inputsize 608:
 <tr><th align="left" bgcolor=#f8f8f8> (Our) YOLOv3Tiny </th><td bgcolor=white> COCO val </td><td bgcolor=white> 15.9 </td><td bgcolor=white> 33.8 </td><td bgcolor=white> 12.8 </td><td bgcolor=white> 7.6 </td><td bgcolor=white> 17.7 </td><td bgcolor=white> 22.4 </td></tr>
 
 </table></tbody>
-
-### YOLOv3Tiny model
-For researchers in China, you can download them from BaiduYunDisk. 
-There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
-
-The link is as following: 
-
-link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
-
-password: 5c8h 
-
 
 # Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
