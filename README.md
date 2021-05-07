@@ -1,15 +1,5 @@
 # Update
-Recently, I'm trying to optimize this project. Maybe about one or more weeks, I will upload the newest
-results and provide a better version of train, test, eval codes.
-
 I wish this version of yolo can help everyone who is interested in Object Detection.
-
-# YOLOv3-SPP and YOLOv3-Plus
-I am trying to build a better YOLOv3 with SPP, PAN and more other modules and tricks.
-
-https://github.com/yjh0410/yolov3-plus_PyTorch
-
-I sincerely recommend everyone to use my new project. It is better~
 
 # This project
 In this project, you can enjoy: 
@@ -17,26 +7,78 @@ In this project, you can enjoy:
 - YOLOv3
 - YOLOv3Spp
 - SlimYOLOv2 
-- TinyYOLOv3
+- YOLOv3Tiny
+- YOLOv4 (still trying ...)
 
-What I have to say is that I don't try to 100% reproduce the whole official YOLO project, because it is really hard to me. I have not much computation resource, so I can't train my yolov3 on COCO. It will cost more than two weeks...
 
-Recently, I made some improvement, and my yolo project is very close to official yolo models.
-
-I will upload the new model again. Just hold on~
-
-However, I have a qeustion: Is the mAP metric really good? Does it really suit object detection?
-
-I find higher mAP doesn't mean better visualization...so weird.
-
+I just want to provide a good YOLO project for everyone who is interested in Object Detection.
 # Weights
 For backbone, I provide the link to download them in ```backbone\weights\README.md```.
 
 For detectors, you can find the link to download them in ```weights\README.md```.
 
+# DarkNet-19, DarkNet-53, CSPDarkNet-53
+First of all, I reproduce the backbones used in YOLO.
+
+## DarkNet-19
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> top1  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 224 </td><td bgcolor=white> 72.96 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 448 </td><td bgcolor=white> 75.52 </td></tr>
+</table></tbody>
+
+For researchers in China, you can download darknet-19 pretrained model from my BaiduYunDisk:
+
+link：https://pan.baidu.com/s/1Rm87Fcj1RXZFmeTUrDWANA 
+
+password：qgzn
+
+Also, you can download them from Google Drive:
+
+link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
+
+## DarkNet-53
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> top1  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 224 </td><td bgcolor=white> 75.42 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 448 </td><td bgcolor=white> 77.76 </td></tr>
+</table></tbody>
+
+For researchers in China, you can download darknet-53 pretrained model from my BaiduYunDisk:
+
+link：https://pan.baidu.com/s/1Rm87Fcj1RXZFmeTUrDWANA 
+
+password：qgzn
+
+Also, you can download them from Google Drive:
+
+link: https://drive.google.com/drive/folders/15saMtvYiz3yfFNu5EnC7GSltEAvTImMB?usp=sharing
+
+
+## CSPDarkNet-53
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> top1 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> cspdarknet53</th><td bgcolor=white> 224 </td><td bgcolor=white> 75.7 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> cspdarknet53-448 </th><td bgcolor=white> 448 </td><td bgcolor=white> 76.9 </td></tr>
+</table></tbody>
+
+Everyone can download the pretrained model from my BaiDuYunDisk:
+
+link: https://pan.baidu.com/s/1-_-CkNDTG-UMtWY2bE-Zjw 
+
+password: pg4o 
+
+</table></tbody>
+
 # YOLOv2
 
-## Tricks
+## YOLOv2 with DarkNet-19
+### Tricks
 Tricks in official paper:
 - [x] batch norm
 - [x] hi-res classifier
@@ -49,15 +91,6 @@ Tricks in official paper:
 - [x] multi-scale
 - [x] hi-red detector
 
-First of all, I reproduce the backbone darknet19 on ImageNet.
-
-<table><tbody>
-<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch)  </td></tr>
-<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 224 </td><td bgcolor=white> 72.9 </td><td bgcolor=white> 72.96 </td></tr>
-<tr><th align="left" bgcolor=#f8f8f8> darknet19</th><td bgcolor=white> 448 </td><td bgcolor=white> 76.5 </td><td bgcolor=white> 75.52 </td></tr>
-</table></tbody>
-
-Not bad, right?
 
 Then I train my YOLOv2 on VOC dataset. I really enjoy yolo. It is so amazing! I think I have achieved this goal:
 
@@ -96,9 +129,6 @@ COCO:
 <tr><th align="left" bgcolor=#f8f8f8> Ours (pytorch)</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 26.6 </td><td bgcolor=white> 46.0 </td><td bgcolor=white> 26.7 </td><td bgcolor=white> 5.9 </td><td bgcolor=white> 27.8 </td><td bgcolor=white> 47.1 </td></tr>
 </table></tbody>
 
-I train my YOLOv2 with 250 epochs on COCO. From the above table, my YOLOv2 is better, right?
-
-
 In TITAN Xp, my yolo-v2 runs at 100+ FPS, so it's very fast. I have no any TITAN X GPU, and I can't run my model in a X GPU. Sorry, guys~
 
 Before I tell you how to use this project, I must say one important thing about difference between origin yolo-v2 and mine:
@@ -109,18 +139,45 @@ So I don't write data augmentation by myself. I'm a little lazy~~
 
 My loss function and groundtruth creator both in the ```tools.py```, and you can try to change any parameters to improve the model.
 
-# YOLOv3
-First of all, I try to reproduce darknet53 on ImageNet:
+### YOLOv2-d19 model
+For researchers in China, you can download them from BaiduYunDisk. 
+There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
+
+The link is as following: 
+
+link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
+
+password: 5c8h 
+
+
+## YOLOv2 with ResNet-50
+
+I replace darknet-19 with resnet-50 and get a better result on COCO-val
 
 <table><tbody>
-<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch)  </td></tr>
-<tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 224 </td><td bgcolor=white> 77.2 </td><td bgcolor=white> 75.42 </td></tr>
-<tr><th align="left" bgcolor=#f8f8f8> darknet53</th><td bgcolor=white> 448 </td><td bgcolor=white> - </td><td bgcolor=white> 77.76 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Our YOLOv2-320</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 25.8 </td><td bgcolor=white> 44.6 </td><td bgcolor=white> 25.9 </td><td bgcolor=white> 4.6 </td><td bgcolor=white> 26.8 </td><td bgcolor=white> 47.9 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Our YOLOv2-416</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 29.0 </td><td bgcolor=white> 48.8 </td><td bgcolor=white> 29.7 </td><td bgcolor=white> 7.4 </td><td bgcolor=white> 31.9 </td><td bgcolor=white> 48.3 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Our YOLOv2-512</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 30.4 </td><td bgcolor=white> 51.6 </td><td bgcolor=white> 30.9 </td><td bgcolor=white> 10.1 </td><td bgcolor=white> 34.9 </td><td bgcolor=white> 46.6 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Our YOLOv2-544</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 30.4 </td><td bgcolor=white> 51.9 </td><td bgcolor=white> 30.9 </td><td bgcolor=white> 11.1 </td><td bgcolor=white> 35.8 </td><td bgcolor=white> 45.5 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Our YOLOv2-608</th><td bgcolor=white> COCO eval </td><td bgcolor=white> 29.2 </td><td bgcolor=white> 51.6 </td><td bgcolor=white> 29.1 </td><td bgcolor=white> 13.6 </td><td bgcolor=white> 36.8 </td><td bgcolor=white> 40.5 </td></tr>
 </table></tbody>
 
-Not so bad, right?
+### YOLOv2-r50 model
+Everyone can download my model files from BaiduYunDisk:
 
-Then, I train my YOLOv3 on VOC:
+Link: https://pan.baidu.com/s/1NmdqPwAmirknO5J__lg5Yw 
+
+Password: hlt6 
+
+# YOLOv3
+
+I train my YOLOv3 on VOC:
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> size </td><td bgcolor=white> Original (darknet) </td><td bgcolor=white> Ours (pytorch) 250epochs </td></tr>
@@ -173,6 +230,17 @@ I also visualize some detection results whose score is over 0.3 on COCO 2017-val
 
 So, just have fun !
 
+### YOLOv3 model
+For researchers in China, you can download them from BaiduYunDisk. 
+There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
+
+The link is as following: 
+
+link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
+
+password: 5c8h 
+
+
 # YOLOv3SPP
 On COCO:
 
@@ -190,7 +258,18 @@ On COCO:
 
 My YOLOv3SPP is not better than my YOLOv3. It is a little confusing ...
 
-# Slim YOLOv2
+### YOLOv3Spp model
+For researchers in China, you can download them from BaiduYunDisk. 
+There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
+
+The link is as following: 
+
+link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
+
+password: 5c8h 
+
+
+# YOLOv2Slim
 I build a very simple lightweight backbone: darknet_tiny
 
 ![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/img_file/darknet_tiny.png)
@@ -203,26 +282,48 @@ Just enjoy it.
 
 And, I'm still trying to make it faster without too much drop of precision.
 
-# TinyYOLOv3
-We evaluate our TinyYOLOv3 on COCO-val with inputsize 608:
+### YOLOv2Slim model
+For researchers in China, you can download them from BaiduYunDisk. 
+There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
+
+The link is as following: 
+
+link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
+
+password: 5c8h 
+
+
+# YOLOv3Tiny
+We evaluate our YOLOv3Tiny on COCO-val with inputsize 608:
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> (official) TinyYOLOv3 </th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> 33.1 </td><td bgcolor=white> - </td><td bgcolor=white>- </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> (official) YOLOv3Tiny </th><td bgcolor=white> COCO test-dev </td><td bgcolor=white> - </td><td bgcolor=white> 33.1 </td><td bgcolor=white> - </td><td bgcolor=white>- </td><td bgcolor=white> - </td><td bgcolor=white> - </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> (Our) TinyYOLOv3 </th><td bgcolor=white> COCO val </td><td bgcolor=white> 15.9 </td><td bgcolor=white> 33.8 </td><td bgcolor=white> 12.8 </td><td bgcolor=white> 7.6 </td><td bgcolor=white> 17.7 </td><td bgcolor=white> 22.4 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> (Our) YOLOv3Tiny </th><td bgcolor=white> COCO val </td><td bgcolor=white> 15.9 </td><td bgcolor=white> 33.8 </td><td bgcolor=white> 12.8 </td><td bgcolor=white> 7.6 </td><td bgcolor=white> 17.7 </td><td bgcolor=white> 22.4 </td></tr>
 
 </table></tbody>
 
-## Installation
+### YOLOv3Tiny model
+For researchers in China, you can download them from BaiduYunDisk. 
+There are 5 models including yolo-v2, yolo-v3, yolo_v3_spp, slim-yolo-v2 and tiny-yolo-v3.
+
+The link is as following: 
+
+link: https://pan.baidu.com/s/1rnmM8HGFzE2NTv6AkljJdg
+
+password: 5c8h 
+
+
+# Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
 - Tensorboard 1.14.
 - opencv-python, python3.6/3.7
 
-## Dataset
+# Dataset
 
-### VOC Dataset
+## VOC Dataset
 I copy the download files from the following excellent project:
 https://github.com/amdegroot/ssd.pytorch
 
@@ -234,60 +335,60 @@ Password：4la9
 
 You will get a ```VOCdevkit.zip```, then what you need to do is just to unzip it and put it into ```data/```. After that, the whole path to VOC dataset is ```data/VOCdevkit/VOC2007``` and ```data/VOCdevkit/VOC2012```.
 
-#### Download VOC2007 trainval & test
+### Download VOC2007 trainval & test
 
 ```Shell
 # specify a directory for dataset to be downloaded into, else default is ~/data/
 sh data/scripts/VOC2007.sh # <directory>
 ```
 
-#### Download VOC2012 trainval
+### Download VOC2012 trainval
 ```Shell
 # specify a directory for dataset to be downloaded into, else default is ~/data/
 sh data/scripts/VOC2012.sh # <directory>
 ```
 
-### MSCOCO Dataset
+## MSCOCO Dataset
 I copy the download files from the following excellent project:
 https://github.com/DeNA/PyTorch_YOLOv3
 
-#### Download MSCOCO 2017 dataset
+### Download MSCOCO 2017 dataset
 Just run ```sh data/scripts/COCO2017.sh```. You will get COCO train2017, val2017, test2017.
 
 
-## Train
-### VOC
+# Train
+## VOC
 ```Shell
 python train.py -d voc --cuda -v [select a model] -hr -ms
 ```
 
 You can run ```python train.py -h``` to check all optional argument.
 
-### COCO
+## COCO
 ```Shell
 python train.py -d coco --cuda -v [select a model] -hr -ms
 ```
 
 
-## Test
-### VOC
+# Test
+## VOC
 ```Shell
 python test.py -d voc --cuda -v [select a model] --trained_model [ Please input the path to model dir. ]
 ```
 
-### COCO
+## COCO
 ```Shell
 python test.py -d coco-val --cuda -v [select a model] --trained_model [ Please input the path to model dir. ]
 ```
 
 
-## Evaluation
-### VOC
+# Evaluation
+## VOC
 ```Shell
 python eval.py -d voc --cuda -v [select a model] --train_model [ Please input the path to model dir. ]
 ```
 
-### COCO
+## COCO
 To run on COCO_val:
 ```Shell
 python eval.py -d coco-val --cuda -v [select a model] --train_model [ Please input the path to model dir. ]
