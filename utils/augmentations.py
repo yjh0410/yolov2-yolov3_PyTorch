@@ -399,3 +399,20 @@ class SSDAugmentation(object):
 
     def __call__(self, img, boxes, labels):
         return self.augment(img, boxes, labels)
+
+
+class ColorAugmentation(object):
+    def __init__(self, size=416, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
+        self.mean = mean
+        self.size = size
+        self.std = std
+        self.augment = Compose([
+            ConvertFromInts(),
+            PhotometricDistort(),
+            RandomMirror(),
+            Resize(self.size),
+            Normalize(self.mean, self.std)
+        ])
+
+    def __call__(self, img, boxes, labels):
+        return self.augment(img, boxes, labels)

@@ -18,29 +18,33 @@ from data import BaseTransform, detection_collate
 
 import tools
 
-from utils.augmentations import SSDAugmentation
+from utils.augmentations import SSDAugmentation, ColorAugmentation
 from utils.cocoapi_evaluator import COCOAPIEvaluator
 from utils.vocapi_evaluator import VOCAPIEvaluator
+from utils.modules import ModelEMA
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='YOLO Detection')
     parser.add_argument('-v', '--version', default='yolo_v2',
-                        help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_x, yolov3_tiny')
+                        help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny, yolov4')
     parser.add_argument('-d', '--dataset', default='voc',
                         help='voc or coco')
     parser.add_argument('-hr', '--high_resolution', action='store_true', default=False,
                         help='use high resolution to pretrain.')  
     parser.add_argument('-ms', '--multi_scale', action='store_true', default=False,
-                        help='use multi-scale trick')                  
+                        help='use multi-scale trick')      
+    parser.add_argument('--mosaic', action='store_true', default=False,
+                        help='use mosaic augmentation')
+    parser.add_argument('--ema', action='store_true', default=False,
+                        help='use ema training trick')
     parser.add_argument('--batch_size', default=32, type=int, 
                         help='Batch size for training')
     parser.add_argument('--lr', default=1e-3, type=float, 
                         help='initial learning rate')
-    parser.add_argument('-cos', '--cos', action='store_true', default=False,
-                        help='use cos lr')
     parser.add_argument('-no_wp', '--no_warm_up', action='store_true', default=False,
                         help='yes or no to choose using warmup strategy to train')
-    parser.add_argument('--wp_epoch', type=int, default=2,
+    parser.add_argument('--wp_epoch', type=int, default=1,
                         help='The upper bound of warm-up')
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
@@ -105,9 +109,9 @@ def train():
         from models.yolov3_spp import YOLOv3Spp as yolo_net
         cfg = config.yolov3_d53_cfg
 
-    elif model_name == 'yolov3_x':
-        from models.yolov3_x import YOLOv3X as yolo_net
-        cfg = config.yolov3_cspd53_cfg
+    elif model_name == 'yolov4':
+        from models.yolov4 import YOLOv4 as yolo_net
+        cfg = config.yolov4_cfg
 
     elif model_name == 'yolov3_tiny':
         from models.yolov3_tiny import YOLOv3tiny as yolo_net
@@ -127,6 +131,10 @@ def train():
     else:
         hr = False
     
+    # mosaic augmentation
+    if args.mosaic:
+        print('use Mosaic Augmentation ...')
+
     # multi-scale
     if args.multi_scale:
         print('use the multi-scale trick ...')
@@ -135,12 +143,18 @@ def train():
     else:
         train_size = val_size = cfg['val_size']
 
+    # mosaic augmentation
+    if args.ema:
+        print('use EMA trick ...')
+
     # dataset and evaluator
     if args.dataset == 'voc':
         data_dir = VOC_ROOT
         num_classes = 20
         dataset = VOCDetection(root=data_dir, 
-                                transform=SSDAugmentation(train_size)
+                                transform=SSDAugmentation(train_size),
+                                base_transform=ColorAugmentation(train_size),
+                                mosaic=args.mosaic
                                 )
 
         evaluator = VOCAPIEvaluator(data_root=data_dir,
@@ -157,8 +171,9 @@ def train():
                     data_dir=data_dir,
                     img_size=train_size,
                     transform=SSDAugmentation(train_size),
+                    base_transform=ColorAugmentation(train_size),
+                    mosaic=args.mosaic,
                     debug=args.debug)
-
 
         evaluator = COCOAPIEvaluator(
                         data_dir=data_dir,
@@ -195,6 +210,7 @@ def train():
                    hr=hr)
     model = net
     model.to(device).train()
+    ema = ModelEMA(model) if args.ema else None
 
     # use tfboard
     if args.tfboard:
@@ -226,6 +242,7 @@ def train():
     t0 = time.time()
     # start training loop
     for epoch in range(args.start_epoch, max_epoch):
+       
         # use step lr
         if epoch in cfg['lr_epoch']:
             tmp_lr = tmp_lr * 0.1
@@ -282,6 +299,10 @@ def train():
             optimizer.step()
             optimizer.zero_grad()
 
+            # ema
+            if args.ema:
+                ema.update(model)
+
             # display
             if iter_i % 10 == 0:
                 if args.tfboard:
@@ -308,22 +329,25 @@ def train():
 
         # evaluation
         if (epoch + 1) % args.eval_epoch == 0:
-            model.trainable = False
-            model.set_grid(val_size)
-            model.eval()
+            if args.ema:
+                model_eval = ema.model
+            else:
+                model_eval = model
+            model_eval.trainable = False
+            model_eval.set_grid(val_size)
+            model_eval.eval()
 
             # evaluate
-            evaluator.evaluate(model)
+            evaluator.evaluate(model_eval)
 
             # convert to training mode.
-            model.trainable = True
-            model.set_grid(train_size)
-            model.train()
+            model_eval.trainable = True
+            model_eval.set_grid(train_size)
+            model_eval.train()
 
-        # save model
-        if (epoch + 1) % 10 == 0:
+            # save model
             print('Saving state, epoch:', epoch + 1)
-            torch.save(model.state_dict(), os.path.join(path_to_save, 
+            torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
                         args.version + '_' + repr(epoch + 1) + '.pth')
                         )  
 

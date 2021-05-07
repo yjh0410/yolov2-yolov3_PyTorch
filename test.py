@@ -13,7 +13,7 @@ import time
 
 parser = argparse.ArgumentParser(description='YOLO Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_x, yolov3_tiny')
+                    help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny, yolov4')
 parser.add_argument('-d', '--dataset', default='voc',
                     help='voc, coco-val.')
 parser.add_argument('-size', '--input_size', default=416, type=int,
@@ -147,9 +147,9 @@ if __name__ == '__main__':
         from models.yolov3_spp import YOLOv3Spp as yolo_net
         cfg = config.yolov3_d53_cfg
 
-    elif model_name == 'yolov3_x':
-        from models.yolov3_x import YOLOv3X as yolo_net
-        cfg = config.yolov3_cspd53_cfg
+    elif model_name == 'yolov4':
+        from models.yolov4 import YOLOv4 as yolo_net
+        cfg = config.yolov4_cfg
 
     elif model_name == 'yolov3_tiny':
         from models.yolov3_tiny import YOLOv3tiny as yolo_net

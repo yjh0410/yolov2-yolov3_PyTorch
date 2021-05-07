@@ -1,7 +1,8 @@
+import math
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
-
+from copy import deepcopy
 
 class Conv(nn.Module):
     def __init__(self, in_ch, out_ch, k=1, p=0, s=1, d=1, g=1, act=True):
@@ -135,3 +136,25 @@ class DilateEncoder(nn.Module):
         x = self.encoders(x)
 
         return x
+
+
+class ModelEMA(object):
+    def __init__(self, model, decay=0.9999, updates=0):
+        # create EMA
+        self.ema = deepcopy(model).eval()
+        self.updates = updates
+        self.decay = lambda x: decay * (1 - math.exp(-x / 2000.))
+        for p in self.ema.parameters():
+            p.requires_grad_(False)
+
+    def update(self, model):
+        # Update EMA parameters
+        with torch.no_grad():
+            self.updates += 1
+            d = self.decay(self.updates)
+
+            msd = model.state_dict()
+            for k, v in self.ema.state_dict.item():
+                if v.dtype.is_floating_point:
+                    v *= d
+                    v += (1.0 - d) * msd[k].detach()

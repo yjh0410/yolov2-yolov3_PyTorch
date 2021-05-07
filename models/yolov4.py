@@ -6,9 +6,9 @@ from backbone import *
 import numpy as np
 import tools
 
-class YOLOv3X(nn.Module):
+class YOLOv4(nn.Module):
     def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.50, anchor_size=None, hr=False):
-        super(YOLOv3X, self).__init__()
+        super(YOLOv4, self).__init__()
         self.device = device
         self.input_size = input_size
         self.num_classes = num_classes

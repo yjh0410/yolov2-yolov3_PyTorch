@@ -73,13 +73,13 @@ yolov3_d53_cfg = {
 }
 
 # YOLOv3X
-yolov3_cspd53_cfg = {
+yolov4_cfg = {
     # network
     'backbone': 'cspd53',
     # for multi-scale trick
-    'train_size': 800,
+    'train_size': 640,
     'val_size': 416,
-    'random_size_range': [10, 24],
+    'random_size_range': [10, 20],
     # anchor size
     # anchor size
     'anchor_size_voc': [[32.64, 47.68], [50.24, 108.16], [126.72, 96.32],     
