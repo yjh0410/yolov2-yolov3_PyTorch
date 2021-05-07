@@ -6,9 +6,10 @@ from backbone import *
 import numpy as np
 import tools
 
-class YOLOv2D19(nn.Module):
-    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.5, anchor_size=None, hr=False):
-        super(YOLOv2D19, self).__init__()
+
+class YOLOv2R50(nn.Module):
+    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.6, anchor_size=None):
+        super(YOLOv2R50, self).__init__()
         self.device = device
         self.input_size = input_size
         self.num_classes = num_classes
@@ -20,22 +21,25 @@ class YOLOv2D19(nn.Module):
         self.stride = 32
         self.grid_cell, self.all_anchor_wh = self.create_grid(input_size)
 
-        # backbone darknet-19
-        self.backbone = darknet19(pretrained=trainable, hr=hr)
+        # 主干网络：resnet50
+        self.backbone = resnet50(pretrained=trainable)
         
-        # detection head
+        # 检测头
         self.convsets_1 = nn.Sequential(
+            Conv(2048, 1024, k=1),
             Conv(1024, 1024, k=3, p=1),
             Conv(1024, 1024, k=3, p=1)
         )
 
-        self.route_layer = Conv(512, 64, k=1)
+        # 融合高分辨率的特征信息
+        self.route_layer = Conv(1024, 128, k=1)
         self.reorg = reorg_layer(stride=2)
 
-        self.convsets_2 = Conv(1280, 1024, k=3, p=1)
+        # 检测头
+        self.convsets_2 = Conv(1024+128*4, 1024, k=3, p=1)
         
-        # prediction layer
-        self.pred = nn.Conv2d(1024, self.num_anchors*(1 + 4 + self.num_classes), kernel_size=1)
+        # 预测曾
+        self.pred = nn.Conv2d(1024, self.num_anchors*(1 + 4 + self.num_classes), 1)
 
 
     def create_grid(self, input_size):
@@ -49,6 +53,7 @@ class YOLOv2D19(nn.Module):
         # generate anchor_wh tensor
         anchor_wh = self.anchor_size.repeat(hs*ws, 1, 1).unsqueeze(0).to(self.device)
 
+
         return grid_xy, anchor_wh
 
 
@@ -58,34 +63,36 @@ class YOLOv2D19(nn.Module):
 
 
     def decode_xywh(self, txtytwth_pred):
+        """将txtytwth预测换算成边界框的中心点坐标和宽高 \n
+            Input: \n
+                txtytwth_pred : [B, H*W, anchor_n, 4] \n
+            Output: \n
+                xywh_pred : [B, H*W*anchor_n, 4] \n
         """
-            Input:
-                txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
-            Output:
-                xywh_pred : [B, H*W*anchor_n, 4] containing [xmin, ymin, xmax, ymax]
-        """
-        # b_x = sigmoid(tx) + gride_x,  b_y = sigmoid(ty) + gride_y
         B, HW, ab_n, _ = txtytwth_pred.size()
+        # b_x = sigmoid(tx) + gride_x
+        # b_y = sigmoid(ty) + gride_y
         xy_pred = torch.sigmoid(txtytwth_pred[:, :, :, :2]) + self.grid_cell
-        # b_w = anchor_w * exp(tw),     b_h = anchor_h * exp(th)
+        # b_w = anchor_w * exp(tw)
+        # b_h = anchor_h * exp(th)
         wh_pred = torch.exp(txtytwth_pred[:, :, :, 2:]) * self.all_anchor_wh
         # [H*W, anchor_n, 4] -> [H*W*anchor_n, 4]
         xywh_pred = torch.cat([xy_pred, wh_pred], -1).view(B, HW*ab_n, 4) * self.stride
 
         return xywh_pred
-
+    
 
     def decode_boxes(self, txtytwth_pred, requires_grad=False):
+        """将txtytwth预测换算成边界框的左上角点坐标和右下角点坐标 \n
+            Input: \n
+                txtytwth_pred : [B, H*W, anchor_n, 4] \n
+            Output: \n
+                x1y1x2y2_pred : [B, H*W*anchor_n, 4] \n
         """
-            Input:
-                txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
-            Output:
-                x1y1x2y2_pred : [B, H*W*anchor_n, 4] containing [xmin, ymin, xmax, ymax]
-        """
-        # [H*W*anchor_n, 4]
+        # 获得边界框的中心点坐标和宽高
         xywh_pred = self.decode_xywh(txtytwth_pred)
 
-        # [center_x, center_y, w, h] -> [xmin, ymin, xmax, ymax]
+        # 将中心点坐标和宽高换算成边界框的左上角点坐标和右下角点坐标
         x1y1x2y2_pred = torch.zeros_like(xywh_pred, requires_grad=requires_grad)
         x1y1x2y2_pred[:, :, 0] = (xywh_pred[:, :, 0] - xywh_pred[:, :, 2] / 2)
         x1y1x2y2_pred[:, :, 1] = (xywh_pred[:, :, 1] - xywh_pred[:, :, 3] / 2)
@@ -102,25 +109,28 @@ class YOLOv2D19(nn.Module):
         x2 = dets[:, 2]  #xmax
         y2 = dets[:, 3]  #ymax
 
-        areas = (x2 - x1) * (y2 - y1)                 # the size of bbox
-        order = scores.argsort()[::-1]                        # sort bounding boxes by decreasing order
+        areas = (x2 - x1) * (y2 - y1)
+        order = scores.argsort()[::-1]
+        
 
-        keep = []                                             # store the final bounding boxes
+        keep = []                                             
         while order.size > 0:
-            i = order[0]                                      #the index of the bbox with highest confidence
-            keep.append(i)                                    #save it to keep
+            i = order[0]
+            keep.append(i)
+            # 计算交集的左上角点和右下角点的坐标
             xx1 = np.maximum(x1[i], x1[order[1:]])
             yy1 = np.maximum(y1[i], y1[order[1:]])
             xx2 = np.minimum(x2[i], x2[order[1:]])
             yy2 = np.minimum(y2[i], y2[order[1:]])
-
+            # 计算交集的宽高
             w = np.maximum(1e-28, xx2 - xx1)
             h = np.maximum(1e-28, yy2 - yy1)
+            # 计算交集的面积
             inter = w * h
 
-            # Cross Area / (bbox + particular area - Cross Area)
+            # 计算交并比
             ovr = inter / (areas[i] + areas[order[1:]] - inter)
-            #reserve all the boundingbox whose ovr less than thresh
+            # 滤除超过nms阈值的检测框
             inds = np.where(ovr <= self.nms_thresh)[0]
             order = order[inds + 1]
 
@@ -217,7 +227,8 @@ class YOLOv2D19(nn.Module):
                                                                   pred_cls=cls_pred,
                                                                   pred_txtytwth=txtytwth_pred,
                                                                   pred_iou=iou_pred,
-                                                                  label=target
+                                                                  label=target,
+                                                                  num_classes=self.num_classes
                                                                   )
 
             return conf_loss, cls_loss, bbox_loss, iou_loss   

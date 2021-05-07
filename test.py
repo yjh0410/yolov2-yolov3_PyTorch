@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from data import *
+from data import config
 import numpy as np
 import cv2
 import tools
@@ -12,7 +13,7 @@ import time
 
 parser = argparse.ArgumentParser(description='YOLO Detection')
 parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolo_v2, yolo_v3, yolo_v3_spp, slim_yolo_v2, tiny_yolo_v3')
+                    help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_x, yolov3_tiny')
 parser.add_argument('-d', '--dataset', default='voc',
                     help='voc, coco-val.')
 parser.add_argument('-size', '--input_size', default=416, type=int,
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     else:
         device = torch.device("cpu")
 
-    input_size = [args.input_size, args.input_size]
+    input_size = args.input_size
 
     # dataset
     if args.dataset == 'voc':
@@ -114,42 +115,53 @@ if __name__ == '__main__':
                     data_dir=coco_root,
                     json_file='instances_val2017.json',
                     name='val2017',
-                    img_size=input_size[0])
+                    img_size=input_size)
 
     class_colors = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(num_classes)]
 
-    # load net
-    if args.version == 'yolo_v2':
-        from models.yolo_v2 import myYOLOv2
-        anchor_size = ANCHOR_SIZE if args.dataset == 'voc' else ANCHOR_SIZE_COCO
-        net = myYOLOv2(device, input_size=input_size, num_classes=num_classes, conf_thresh=args.conf_thresh, nms_thresh=args.nms_thresh, anchor_size=anchor_size)
-    
-    elif args.version == 'yolo_v3':
-        from models.yolo_v3 import myYOLOv3
-        anchor_size = MULTI_ANCHOR_SIZE if args.dataset == 'voc' else MULTI_ANCHOR_SIZE_COCO
-        net = myYOLOv3(device, input_size=input_size, num_classes=num_classes, conf_thresh=args.conf_thresh, nms_thresh=args.nms_thresh, anchor_size=anchor_size)
-    
-    elif args.version == 'yolo_v3_spp':
-        from models.yolo_v3_spp import myYOLOv3Spp
-        anchor_size = MULTI_ANCHOR_SIZE if args.dataset == 'voc' else MULTI_ANCHOR_SIZE_COCO
-        net = myYOLOv3Spp(device, input_size=input_size, num_classes=num_classes, conf_thresh=args.conf_thresh, nms_thresh=args.nms_thresh, anchor_size=anchor_size)
-    
-    elif args.version == 'slim_yolo_v2':
-        from models.slim_yolo_v2 import SlimYOLOv2 
-        anchor_size = ANCHOR_SIZE if args.dataset == 'voc' else ANCHOR_SIZE_COCO
-        net = SlimYOLOv2(device, input_size=input_size, num_classes=num_classes, conf_thresh=args.conf_thresh, nms_thresh=args.nms_thresh, anchor_size=anchor_size)
+    # build model
+    if args.version == 'yolov2_d19':
+        from models.yolov2_d19 import YOLOv2D19
+        cfg = config.yolov2_d19_train_cfg
+        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+        # model
+        yolo_net = YOLOv2D19(device=device, 
+                             input_size=input_size, 
+                             num_classes=num_classes, 
+                             trainable=False, 
+                             anchor_size=anchor_size)
+        print('Let us train yolov2_d19... ')
 
-    elif args.version == 'tiny_yolo_v3':
-        from models.tiny_yolo_v3 import YOLOv3tiny
-        anchor_size = TINY_MULTI_ANCHOR_SIZE if args.dataset == 'voc' else TINY_MULTI_ANCHOR_SIZE_COCO
-        net = YOLOv3tiny(device, input_size=input_size, num_classes=num_classes, conf_thresh=args.conf_thresh, nms_thresh=args.nms_thresh, anchor_size=anchor_size)
+    elif args.version == 'yolov2_r50':
+        from models.yolov2_r50 import YOLOv2R50
+        cfg = config.yolov2_r50_train_cfg
+        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+        # model
+        yolo_net = YOLOv2R50(device=device, 
+                             input_size=input_size, 
+                             num_classes=num_classes, 
+                             trainable=False, 
+                             anchor_size=anchor_size)
+        print('Let us train yolov2_r50... ')
 
-    net.load_state_dict(torch.load(args.trained_model, map_location=device))
-    net.to(device).eval()
+    elif args.version == 'yolov3':
+        from models.yolov3 import YOLOv3
+        cfg = config.yolov3_d53_train_cfg
+        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+        # model
+        yolo_net = YOLOv3(device=device, 
+                          input_size=input_size, 
+                          num_classes=num_classes, 
+                          trainable=False, 
+                          anchor_size=anchor_siz)
+        print('Let us train yolov3...')
+
+    yolo_net.load_state_dict(torch.load(args.trained_model, map_location=device))
+    yolo_net.to(device).eval()
     print('Finished loading model!')
 
     # evaluation
-    test(net=net, 
+    test(net=yolo_net, 
         device=device, 
         testset=dataset,
         transform=BaseTransform(input_size),

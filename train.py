@@ -72,8 +72,18 @@ def train():
     args = parse_args()
     print("Setting Arguments.. : ", args)
     print("----------------------------------------------------------")
-    # config file
+    # cuda
+    if args.cuda:
+        print('use cuda')
+        cudnn.benchmark = True
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
     model_name = args.version
+    print('Model: ' model_name)
+
+    # config file
     if model_name == 'yolov2_d19':
         cfg = config.yolov2_d19_train_cfg
     elif model_name == 'yolov2_r50':
@@ -87,7 +97,6 @@ def train():
     elif model_name == 'yolov3_tiny':
         cfg = config.yolov3tiny_train_cfg
 
-
     # path to save model
     path_to_save = os.path.join(args.save_folder, args.dataset, args.version)
     os.makedirs(path_to_save, exist_ok=True)
@@ -99,24 +108,14 @@ def train():
     else:
         hr = False
     
-    # cuda
-    if args.cuda:
-        print('use cuda')
-        cudnn.benchmark = True
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-
     # multi-scale
     if args.multi_scale:
         print('use the multi-scale trick ...')
-        train_size = [640, 640]
-        val_size = [416, 416]
+        train_size = cfg['train_size']
+        val_size = cfg['val_size']
     else:
-        train_size = [416, 416]
-        val_size = [416, 416]
+        train_size = val_size = cfg['val_size']
 
-    cfg = train_cfg
     # dataset and evaluator
     if args.dataset == 'voc':
         data_dir = VOC_ROOT
@@ -168,35 +167,62 @@ def train():
                     )
 
     # build model
-    if args.version == 'yolo_v2':
-        from models.yolo_v2 import myYOLOv2
-        anchor_size = ANCHOR_SIZE if args.dataset == 'voc' else ANCHOR_SIZE_COCO
-    
-        yolo_net = myYOLOv2(device, input_size=train_size, num_classes=num_classes, trainable=True, anchor_size=anchor_size, hr=hr)
-        print('Let us train yolo_v2 on the %s dataset ......' % (args.dataset))
+    if model_name == 'yolov2_d19':
+        from models.yolov2_d19 import YOLOv2D19
+        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+        # model
+        yolo_net = YOLOv2D19(device=device, 
+                             input_size=train_size, 
+                             num_classes=num_classes, 
+                             trainable=True, 
+                             anchor_size=anchor_size, 
+                             hr=hr)
+        print('Let us train yolov2_d19... ')
 
-    elif args.version == 'yolo_v3':
-        from models.yolo_v3 import myYOLOv3
-        anchor_size = MULTI_ANCHOR_SIZE if args.dataset == 'voc' else MULTI_ANCHOR_SIZE_COCO
-        
-        yolo_net = myYOLOv3(device, input_size=train_size, num_classes=num_classes, trainable=True, anchor_size=anchor_size, hr=hr)
-        print('Let us train yolo_v3 on the %s dataset ......' % (args.dataset))
+    elif model_name == 'yolov2_r50':
+        from models.yolov2_r50 import YOLOv2R50
+        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+        # model
+        yolo_net = YOLOv2R50(device=device, 
+                             input_size=train_size, 
+                             num_classes=num_classes, 
+                             trainable=True, 
+                             anchor_size=anchor_size, 
+                             hr=hr)
+        print('Let us train yolov2_r50... ')
 
-    elif args.version == 'yolo_v3_spp':
-        from models.yolo_v3_spp import myYOLOv3Spp
-        anchor_size = MULTI_ANCHOR_SIZE if args.dataset == 'voc' else MULTI_ANCHOR_SIZE_COCO
-        
-        yolo_net = myYOLOv3Spp(device, input_size=train_size, num_classes=num_classes, trainable=True, anchor_size=anchor_size, hr=hr)
-        print('Let us train yolo_v3_spp on the %s dataset ......' % (args.dataset))
+    elif model_name == 'yolov3':
+        from models.yolov3 import YOLOv3
+        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+        # model
+        yolo_net = YOLOv3(device=device, 
+                          input_size=train_size, 
+                          num_classes=num_classes, 
+                          trainable=True, 
+                          anchor_size=anchor_size, 
+                          hr=hr)
+        print('Let us train yolov3...')
 
-    elif args.version == 'slim_yolo_v2':
+    elif model_name == 'yolov3_spp':
+        from models.yolov3_spp import YOLOv3Spp
+        anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+        # model
+        yolo_net = YOLOv3Spp(device=device, 
+                             input_size=train_size, 
+                             num_classes=num_classes, 
+                             trainable=True, 
+                             anchor_size=anchor_size, 
+                             hr=hr)
+        print('Let us train yolov3_spp...')
+
+    elif model_name == 'slim_yolo_v2':
         from models.slim_yolo_v2 import SlimYOLOv2
         anchor_size = ANCHOR_SIZE if args.dataset == 'voc' else ANCHOR_SIZE_COCO
     
         yolo_net = SlimYOLOv2(device, input_size=train_size, num_classes=num_classes, trainable=True, anchor_size=anchor_size, hr=hr)
         print('Let us train slim_yolo_v2 on the %s dataset ......' % (args.dataset))
 
-    elif args.version == 'tiny_yolo_v3':
+    elif model_name == 'tiny_yolo_v3':
         from models.tiny_yolo_v3 import YOLOv3tiny
         anchor_size = TINY_MULTI_ANCHOR_SIZE if args.dataset == 'voc' else TINY_MULTI_ANCHOR_SIZE_COCO
     
@@ -286,7 +312,7 @@ def train():
             
             # make labels
             targets = [label.tolist() for label in targets]
-            if args.version == 'yolo_v2' or args.version == 'slim_yolo_v2':
+            if model_name == 'yolo_v2' or model_name == 'slim_yolo_v2':
                 targets = tools.gt_creator(input_size=train_size, 
                                            stride=yolo_net.stride, 
                                            label_lists=targets, 

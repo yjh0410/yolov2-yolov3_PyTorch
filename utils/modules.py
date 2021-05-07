@@ -3,17 +3,24 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
 
-class Conv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, ksize, padding=0, stride=1, dilation=1, leakyReLU=False):
-        super(Conv2d, self).__init__()
-        self.convs = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, ksize, stride=stride, padding=padding, dilation=dilation),
-            nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(0.1, inplace=True) if leakyReLU else nn.ReLU(inplace=True)
-        )
+class Conv(nn.Module):
+    def __init__(self, in_ch, out_ch, k=1, p=0, s=1, d=1, act=True):
+        super(Conv, self).__init__()
+        if act:
+            self.convs = nn.Sequential(
+                nn.Conv2d(in_ch, out_ch, k, stride=s, padding=p, dilation=d),
+                nn.BatchNorm2d(out_ch),
+                nn.LeakyReLU(0.1, inplace=True)
+            )
+        else:
+            self.convs = nn.Sequential(
+                nn.Conv2d(in_ch, out_ch, k, stride=s, padding=p, dilation=d),
+                nn.BatchNorm2d(out_ch)
+            )
 
     def forward(self, x):
         return self.convs(x)
+
 
 class reorg_layer(nn.Module):
     def __init__(self, stride):

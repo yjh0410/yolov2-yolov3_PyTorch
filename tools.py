@@ -3,43 +3,33 @@ from data import *
 import torch.nn as nn
 import torch.nn.functional as F
 
-CLASS_COLOR = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(len(VOC_CLASSES))]
 # We use ignore thresh to decide which anchor box can be kept.
-ignore_thresh = IGNORE_THRESH
+ignore_thresh = 0.5
 
-class BCELoss(nn.Module):
-    def __init__(self,  weight=None, ignore_index=-100, reduce=None, reduction='mean'):
-        super(BCELoss, self).__init__()
+
+class MSEWithLogitsLoss(nn.Module):
+    def __init__(self, reduction='mean'):
+        super(MSEWithLogitsLoss, self).__init__()
         self.reduction = reduction
-    def forward(self, inputs, targets, mask):
-        pos_id = (mask==1.0).float()
-        neg_id = (mask==0.0).float()
-        pos_loss = -pos_id * (targets * torch.log(inputs + 1e-14) + (1 - targets) * torch.log(1.0 - inputs + 1e-14))
-        neg_loss = -neg_id * torch.log(1.0 - inputs + 1e-14)
-        if self.reduction == 'mean':
-            pos_loss = torch.mean(torch.sum(pos_loss, 1))
-            neg_loss = torch.mean(torch.sum(neg_loss, 1))
-            return pos_loss, neg_loss
-        else:
-            return pos_loss, neg_loss
 
-
-class MSELoss(nn.Module):
-    def __init__(self,  weight=None, size_average=None, ignore_index=-100, reduce=None, reduction='mean'):
-        super(MSELoss, self).__init__()
-        self.reduction = reduction
     def forward(self, inputs, targets, mask):
+        inputs = torch.clamp(torch.sigmoid(logits), min=1e-4, max=1.0 - 1e-4)
+
         # We ignore those whose tarhets == -1.0. 
         pos_id = (mask==1.0).float()
         neg_id = (mask==0.0).float()
         pos_loss = pos_id * (inputs - targets)**2
         neg_loss = neg_id * (inputs)**2
+        loss = 5.0*pos_loss + 1.0*neg_loss
+
         if self.reduction == 'mean':
-            pos_loss = torch.mean(torch.sum(pos_loss, 1))
-            neg_loss = torch.mean(torch.sum(neg_loss, 1))
-            return pos_loss, neg_loss
+            batch_size = logits.size(0)
+            loss = torch.sum(loss) / batch_size
+
+            return loss
+
         else:
-            return pos_loss, neg_loss
+            return loss
 
 
 def generate_anchor(input_size, stride, anchor_scale, anchor_aspect):
@@ -389,50 +379,45 @@ def iou_score(bboxes_a, bboxes_b):
     return area_i / (area_a + area_b - area_i)
 
 
-def loss(pred_conf, pred_cls, pred_txtytwth, label, num_classes, obj_loss_f='mse'):
-    if obj_loss_f == 'bce':
-        # In yolov3, we use bce as conf loss_f
-        conf_loss_function = BCELoss(reduction='mean')
-        obj = 1.0
-        noobj = 1.0
-    elif obj_loss_f == 'mse':
-        # In yolov2, we use mse as conf loss_f.
-        conf_loss_function = MSELoss(reduction='mean')
-        obj = 5.0
-        noobj = 1.0
-
+def loss(pred_conf, pred_cls, pred_txtytwth, label):
+    # loss func
+    conf_loss_function = MSEWithLogitsLoss(reduction='mean')
     cls_loss_function = nn.CrossEntropyLoss(reduction='none')
     txty_loss_function = nn.BCEWithLogitsLoss(reduction='none')
     twth_loss_function = nn.MSELoss(reduction='none')
 
-    pred_conf = torch.sigmoid(pred_conf[:, :, 0])
+    # pred
+    pred_conf = pred_conf[:, :, 0]
     pred_cls = pred_cls.permute(0, 2, 1)
     txty_pred = pred_txtytwth[:, :, :2]
     twth_pred = pred_txtytwth[:, :, 2:]
-        
+
+    # gt    
     gt_conf = label[:, :, 0].float()
     gt_obj = label[:, :, 1].float()
     gt_cls = label[:, :, 2].long()
-    gt_txtytwth = label[:, :, 3:-1].float()
-    gt_box_scale_weight = label[:, :, -1]
+    gt_txty = label[:, :, 3:5].float()
+    gt_twth = label[:, :, 5:7].float()
+    gt_box_scale_weight = label[:, :, 7]
+    gt_iou = (gt_box_scale_weight > 0.).float()
     gt_mask = (gt_box_scale_weight > 0.).float()
 
+    batch_size = pred_conf.size(0)
     # objectness loss
-    pos_loss, neg_loss = conf_loss_function(pred_conf, gt_conf, gt_obj)
-    conf_loss = obj * pos_loss + noobj * neg_loss
+    conf_loss = conf_loss_function(pred_conf, gt_conf, gt_obj)
     
     # class loss
-    cls_loss = torch.mean(torch.sum(cls_loss_function(pred_cls, gt_cls) * gt_mask, 1))
+    cls_loss = torch.sum(cls_loss_function(pred_cls, gt_cls) * gt_mask) / batch_size
     
     # box loss
-    txty_loss = torch.mean(torch.sum(torch.sum(txty_loss_function(txty_pred, gt_txtytwth[:, :, :2]), 2) * gt_box_scale_weight * gt_mask, 1))
-    twth_loss = torch.mean(torch.sum(torch.sum(twth_loss_function(twth_pred, gt_txtytwth[:, :, 2:]), 2) * gt_box_scale_weight * gt_mask, 1))
+    txty_loss = torch.sum(torch.sum(txty_loss_function(pred_txty, gt_txty), dim=-1) * gt_box_scale_weight * gt_mask) / batch_size
+    twth_loss = torch.sum(torch.sum(twth_loss_function(pred_twth, gt_twth), dim=-1) * gt_box_scale_weight * gt_mask) / batch_size
+    bbox_loss = txty_loss + twth_loss
 
-    txtytwth_loss = txty_loss + twth_loss
+    # iou loss
+    iou_loss = torch.sum(iou_loss_function(pred_iou, gt_iou) * gt_mask) / batch_size
 
-    total_loss = conf_loss + cls_loss + txtytwth_loss
-
-    return conf_loss, cls_loss, txtytwth_loss, total_loss
+    return conf_loss, cls_loss, bbox_loss, iou_loss
 
 
 if __name__ == "__main__":
