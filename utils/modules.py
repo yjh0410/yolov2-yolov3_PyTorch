@@ -69,40 +69,40 @@ class SPP(nn.Module):
         return x
 
 
-class ResidualBlock(nn.Module):
-    """
-    basic residual block for CSP-Darknet
-    """
-    def __init__(self, in_ch, shortcut=True):
-        super(ResidualBlock, self).__init__()
-        self.conv1 = Conv(in_ch, in_ch, k=1)
-        self.conv2 = Conv(in_ch, in_ch, k=3, p=1, act=False)
-        self.act = nn.LeakyReLU(0.1, inplace=True)
-        self.shortcut = shortcut
-
-    def forward(self, x):
-        h = self.conv2(self.conv1(x))
-        out = self.act(x + h) if self.shortcut else self.act(h)
-
-        return out
-
-
-class CSPStage(nn.Module):
-    def __init__(self, c1, c2, n=1, shortcut=True):
-        super(CSPStage, self).__init__()
-        c_ = c1 // 2  # hidden channels
+# Copy from yolov5
+class Bottleneck(nn.Module):
+    # Standard bottleneck
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
+        super(Bottleneck, self).__init__()
+        c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, k=1)
-        self.cv2 = Conv(c1, c_, k=1)
-        self.res_blocks = nn.Sequential(*[ResidualBlock(in_ch=c_, shortcut=shortcut) for _ in range(n)])
-        self.cv3 = Conv(2 * c_, c2, k=1)
+        self.cv2 = Conv(c_, c2, k=3, p=1, g=g)
+        self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        y1 = self.cv1(x)
-        y2 = self.res_blocks(self.cv2(x))
-
-        return self.cv3(torch.cat([y1, y2], dim=1))
+        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
+# Copy from yolov5
+class BottleneckCSP(nn.Module):
+    # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super(BottleneckCSP, self).__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, c_, k=1)
+        self.cv2 = nn.Conv2d(c1, c_, kernel_size=1, bias=False)
+        self.cv3 = nn.Conv2d(c_, c_, kernel_size=1, bias=False)
+        self.cv4 = Conv(2 * c_, c2, k=1)
+        self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
+        self.act = nn.LeakyReLU(0.1, inplace=True)
+        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
+
+    def forward(self, x):
+        y1 = self.cv3(self.m(self.cv1(x)))
+        y2 = self.cv2(x)
+        return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
+
+        
 class DilateBottleneck(nn.Module):
     # Standard bottleneck
     def __init__(self, in_ch, d=1, g=1, e=0.5):

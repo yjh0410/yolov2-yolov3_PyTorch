@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import random
 
 import torch
 from torch.utils.data import Dataset
@@ -67,6 +68,7 @@ class COCODataset(Dataset):
         self.img_size = img_size
         self.min_size = min_size
         self.transform = transform
+        self.base_transform = base_transform
         self.mosaic = mosaic
 
 

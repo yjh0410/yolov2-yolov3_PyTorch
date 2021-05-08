@@ -11,6 +11,8 @@ import torch
 import torch.utils.data as data
 import cv2
 import numpy as np
+import random
+
 if sys.version_info[0] == 2:
     import xml.etree.cElementTree as ET
 else:
@@ -108,6 +110,7 @@ class VOCDetection(data.Dataset):
         self.root = root
         self.image_set = image_sets
         self.transform = transform
+        self.base_transform = base_transform
         self.target_transform = target_transform
         self.mosaic = mosaic
         self.name = dataset_name

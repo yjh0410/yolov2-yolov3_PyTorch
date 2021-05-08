@@ -44,7 +44,7 @@ def parse_args():
                         help='initial learning rate')
     parser.add_argument('-no_wp', '--no_warm_up', action='store_true', default=False,
                         help='yes or no to choose using warmup strategy to train')
-    parser.add_argument('--wp_epoch', type=int, default=1,
+    parser.add_argument('--wp_epoch', type=int, default=2,
                         help='The upper bound of warm-up')
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
@@ -241,7 +241,7 @@ def train():
     t0 = time.time()
     # start training loop
     for epoch in range(args.start_epoch, max_epoch):
-       
+
         # use step lr
         if epoch in cfg['lr_epoch']:
             tmp_lr = tmp_lr * 0.1

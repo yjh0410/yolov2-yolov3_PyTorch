@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import Conv, SPP, CSPStage, UpSample, DilateEncoder
+from utils import Conv, SPP, BottleneckCSP, UpSample, DilateEncoder
 from backbone import *
 import numpy as np
 import tools
@@ -26,29 +26,29 @@ class YOLOv4(nn.Module):
 
         # neck
         self.spp = nn.Sequential(
+            Conv(1024, 512, k=1),
             SPP(),
-            Conv(1024*4, 1024, k=1),
-            CSPStage(1024, 1024, n=3, shortcut=False)
+            BottleneckCSP(512*4, 1024, n=3, shortcut=False)
         )
         # self.neck = DilateEncoder(1024, 1024)
 
-        # head
+         # head
         self.head_conv_0 = Conv(1024, 512, k=1)  # 10
         self.head_upsample_0 = UpSample(scale_factor=2)
-        self.head_csp_0 = CSPStage(512 + 512, 512, n=3, shortcut=False)
+        self.head_csp_0 = BottleneckCSP(512 + 512, 512, n=3, shortcut=False)
 
         # P3/8-small
         self.head_conv_1 = Conv(512, 256, k=1)  # 14
         self.head_upsample_1 = UpSample(scale_factor=2)
-        self.head_csp_1 = CSPStage(256 + 256, 256, n=3, shortcut=False)
+        self.head_csp_1 = BottleneckCSP(256 + 256, 256, n=3, shortcut=False)
 
         # P4/16-medium
         self.head_conv_2 = Conv(256, 256, k=3, p=1, s=2)
-        self.head_csp_2 = CSPStage(256 + 256, 512, n=3, shortcut=False)
+        self.head_csp_2 = BottleneckCSP(256 + 256, 512, n=3, shortcut=False)
 
         # P8/32-large
         self.head_conv_3 = Conv(512, 512, k=3, p=1, s=2)
-        self.head_csp_3 = CSPStage(512 + 512, 1024, n=3, shortcut=False)
+        self.head_csp_3 = BottleneckCSP(512 + 512, 1024, n=3, shortcut=False)
 
         # det conv
         self.head_det_1 = nn.Conv2d(256, self.num_anchors * (1 + self.num_classes + 4), 1)
