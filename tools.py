@@ -13,7 +13,7 @@ class MSEWithLogitsLoss(nn.Module):
         self.reduction = reduction
 
     def forward(self, logits, targets, mask):
-        inputs = torch.clamp(torch.sigmoid(logits), min=1e-4, max=1.0 - 1e-4)
+        inputs = torch.sigmoid(logits)
 
         # We ignore those whose tarhets == -1.0. 
         pos_id = (mask==1.0).float()

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import Conv, SPP, CSPStage, UpSample
+from utils import Conv, SPP, CSPStage, UpSample, DilateEncoder
 from backbone import *
 import numpy as np
 import tools
@@ -22,13 +22,15 @@ class YOLOv4(nn.Module):
 
         # backbone cspdarknet-53
         self.backbone = cspdarknet53(pretrained=trainable, hr=hr)
+        # self.backbone = darknet53(pretrained=trainable, hr=hr)
 
-        # SPP
+        # neck
         self.spp = nn.Sequential(
             SPP(),
             Conv(1024*4, 1024, k=1),
             CSPStage(1024, 1024, n=3, shortcut=False)
         )
+        # self.neck = DilateEncoder(1024, 1024)
 
         # head
         self.head_conv_0 = Conv(1024, 512, k=1)  # 10
