@@ -21,6 +21,7 @@ class Conv_BN_LeakyReLU(nn.Module):
     def forward(self, x):
         return self.convs(x)
 
+
 class resblock(nn.Module):
     def __init__(self, ch, nblocks=1):
         super().__init__()
@@ -36,6 +37,7 @@ class resblock(nn.Module):
         for module in self.module_list:
             x = module(x) + x
         return x
+
 
 class DarkNet_19(nn.Module):
     def __init__(self, num_classes=1000):
@@ -107,11 +109,10 @@ class DarkNet_19(nn.Module):
         # return x
         return C_4, C_5, C_6
 
+
 class DarkNet_53(nn.Module):
     """
-    YOLOv3 model module. The module list is defined by create_yolov3_modules function. \
-    The network returns loss values from three YOLO layers during training \
-    and detection results during test.
+    DarkNet-53.
     """
     def __init__(self, num_classes=1000):
         super(DarkNet_53, self).__init__()
@@ -157,6 +158,7 @@ class DarkNet_53(nn.Module):
         # x = self.fc(x)
 
         return C_3, C_4, C_5
+
 
 class DarkNet_Tiny(nn.Module):
     def __init__(self, num_classes=1000):
@@ -207,6 +209,7 @@ class DarkNet_Tiny(nn.Module):
         # x = self.avgpool(x)
         # x = x.view(x.size(0), -1)
         return C_3, C_4, C_5
+
 
 class DarkNet_Light(nn.Module):
     def __init__(self, num_classes=1000):
@@ -273,6 +276,7 @@ def darknet19(pretrained=False, hr=False, **kwargs):
             model.load_state_dict(torch.load(path_to_dir + '/weights/darknet19_72.96.pth', map_location='cuda'), strict=False)
     return model
 
+
 def darknet53(pretrained=False, hr=False, **kwargs):
     """Constructs a darknet-53 model.
 
@@ -291,6 +295,7 @@ def darknet53(pretrained=False, hr=False, **kwargs):
             model.load_state_dict(torch.load(path_to_dir + '/weights/darknet53/darknet53_75.42.pth', map_location='cuda'), strict=False)
     return model
 
+
 def darknet_tiny(pretrained=False, hr=False, **kwargs):
     """Constructs a darknet-tiny model.
 
@@ -308,6 +313,7 @@ def darknet_tiny(pretrained=False, hr=False, **kwargs):
             print('Loading the darknet_tiny ...')
             model.load_state_dict(torch.load(path_to_dir + '/weights/darknet_tiny_63.50_85.06.pth', map_location='cuda'), strict=False)
     return model
+
 
 def darknet_light(pretrained=False, hr=False, **kwargs):
     """Constructs a darknet_light model.
