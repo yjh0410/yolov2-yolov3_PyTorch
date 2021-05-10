@@ -5,10 +5,11 @@ I wish this version of yolo can help everyone who is interested in Object Detect
 
 # This project
 In this project, you can enjoy: 
-- YOLOv2
+- YOLOv2 with DarkNet-19
+- YOLOv2 with ResNet-50
+- YOLOv2Slim
 - YOLOv3
 - YOLOv3Spp
-- SlimYOLOv2 
 - YOLOv3Tiny
 - YOLOv4 (still trying ...)
 
