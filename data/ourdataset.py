@@ -19,11 +19,11 @@ else:
     import xml.etree.ElementTree as ET
 
 
-CLASSES = ('cat', 'dog')
-DATA_ROOT = "/home/jxk/object-detection/dataset/cats_dogs/"
+CLASSES = ('Azusa', 'Yui', 'Mio', 'Ritsu', 'Mugi') # no background label
+DATA_ROOT = "/home/jxk/object-detection/dataset/KonFace/"
 
 
-class DetectionAnnotationTransform(object):
+class AnnotationTransform(object):
     """Transforms a VOC annotation into a Tensor of bbox coords and label index
     Initilized with a dictionary lookup of classnames to indexes
 
@@ -98,8 +98,8 @@ class OurDetection(data.Dataset):
                  image_sets='train',
                  transform=None, 
                  base_transform=None,
-                 target_transform=DetectionAnnotationTransform(),
-                 dataset_name='cats_dogs', 
+                 target_transform=AnnotationTransform(),
+                 dataset_name='konface', 
                  mosaic=False):
         self.root = root
         self.img_size = img_size
@@ -183,7 +183,7 @@ class OurDetection(data.Dataset):
                 h0, w0, _ = img_i.shape
 
                 # resize image to img_size
-                img_i = cv2.resize(img_i, self.img_size, self.img_size)
+                img_i = cv2.resize(img_i, (self.img_size, self.img_size))
                 h, w, _ = img_i.shape
 
                 # place img in img4
@@ -308,7 +308,7 @@ if __name__ == "__main__":
                            image_sets='train',
                            transform=BaseTransform(img_size, (0, 0, 0)),
                            base_transform=BaseTransform(img_size, (0, 0, 0)),
-                           target_transform=VOCAnnotationTransform(), 
+                           target_transform=AnnotationTransform(), 
                             mosaic=True)
                             
     for i in range(1000):
