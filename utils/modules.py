@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from copy import deepcopy
 
+
 class Conv(nn.Module):
     def __init__(self, in_ch, out_ch, k=1, p=0, s=1, d=1, g=1, act=True):
         super(Conv, self).__init__()
@@ -102,40 +103,39 @@ class BottleneckCSP(nn.Module):
         y2 = self.cv2(x)
         return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
-        
+
 class DilateBottleneck(nn.Module):
     # Standard bottleneck
-    def __init__(self, in_ch, d=1, g=1, e=0.5):
+    def __init__(self, c1, c2, shortcut=True, d=1, g=1, e=0.5):
         super(DilateBottleneck, self).__init__()
-        inter_ch = int(in_ch * e)
+        c_ = int(c1 * e)
         self.branch = nn.Sequential(
-            Conv(in_ch, inter_ch, k=1),
-            Conv(inter_ch, inter_ch, k=3, p=d, d=d, g=g),
-            Conv(inter_ch, in_ch, k=1)
+            Conv(c1, c_, k=1),
+            Conv(c_, c_, k=3, p=d, d=d, g=g)
         )
+        self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        return x + self.branch(x)
+        return x + self.branch(x) if self.add else self.branch(x)
 
 
-class DilateEncoder(nn.Module):
-    """ DilateEncoder """
-    def __init__(self, in_ch, out_ch, g=1, dilation_list=[2, 4, 6, 8]):
-        super(DilateEncoder, self).__init__()
-        self.projector = nn.Sequential(
-            Conv(in_ch, out_ch, k=1, act=False),
-            Conv(out_ch, out_ch, k=3, p=1, g=g, act=False)
-        )
-        encoders = []
-        for d in dilation_list:
-            encoders.append(DilateBottleneck(in_ch=out_ch, d=d, g=g))
-        self.encoders = nn.Sequential(*encoders)
+class DilateEncoderCSP(nn.Module):
+    """ DilateEncoderCSP """
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, dilation_list=[1, 2, 4, 6]):
+        super(DilateEncoderCSP, self).__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, c_, k=1)
+        self.cv2 = nn.Conv2d(c1, c_, kernel_size=1, bias=False)
+        self.cv3 = nn.Conv2d(c_, c_, kernel_size=1, bias=False)
+        self.cv4 = Conv(2 * c_, c2, k=1)
+        self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
+        self.act = nn.LeakyReLU(0.1, inplace=True)
+        self.m = nn.Sequential(*[DilateBottleneck(c_, c_, shortcut, d=d, g=g, e=1.0) for d in dilation_list])
 
     def forward(self, x):
-        x = self.projector(x)
-        x = self.encoders(x)
-
-        return x
+        y1 = self.cv3(self.m(self.cv1(x)))
+        y2 = self.cv2(x)
+        return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
 
 class ModelEMA(object):
