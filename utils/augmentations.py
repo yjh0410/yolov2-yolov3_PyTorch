@@ -329,6 +329,29 @@ class RandomMirror(object):
         return image, boxes, classes
 
 
+class RandomInvert(object):
+    def __call__(self, image, boxes, classes):
+        height, _, _ = image.shape
+        if random.randint(2):
+            image = image[::-1, :]
+            boxes = boxes.copy()
+            boxes[:, 1::2] = height - boxes[:, 3::-2]
+        return image, boxes, classes
+
+
+class RandomRotate(object):
+    def __call__(self, image, boxes, classes):
+        height, weight, _ = image.shape
+        if random.randint(2):
+            # rorate 90
+            image = image.T
+            boxes = boxes.copy()
+            x1, x2, y1, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+            boxes = np.stack([y1, x2, y2, x1], axis=1)
+            # In fact, 270 = 90 + mirror
+        return image, boxes, classes
+
+
 class SwapChannels(object):
     """Transforms a tensorized image by swapping the channels in the order
      specified in the swap tuple.
@@ -392,6 +415,8 @@ class SSDAugmentation(object):
             Expand(self.mean),
             RandomSampleCrop(),
             RandomMirror(),
+            # RandomInvert(),
+            # RandomRotate(),
             ToPercentCoords(),
             Resize(self.size),
             Normalize(self.mean, self.std)
