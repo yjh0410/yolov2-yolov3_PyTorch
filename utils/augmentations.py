@@ -344,10 +344,13 @@ class RandomRotate(object):
         height, weight, _ = image.shape
         if random.randint(2):
             # rorate 90
-            image = image.T
+            image_b = image[:, :, 0].T
+            image_g = image[:, :, 1].T
+            image_r = image[:, :, 2].T
+            image = np.stack([image_b, image_g, image_r], axis=2)
             boxes = boxes.copy()
-            x1, x2, y1, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
-            boxes = np.stack([y1, x2, y2, x1], axis=1)
+            x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+            boxes = np.stack([y1, x1, y2, x2], axis=1)
             # In fact, 270 = 90 + mirror
         return image, boxes, classes
 
