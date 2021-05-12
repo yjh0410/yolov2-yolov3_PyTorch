@@ -154,7 +154,7 @@ class ModelEMA(object):
             d = self.decay(self.updates)
 
             msd = model.state_dict()
-            for k, v in self.ema.state_dict.item():
+            for k, v in self.ema.state_dict().items():
                 if v.dtype.is_floating_point:
                     v *= d
-                    v += (1.0 - d) * msd[k].detach()
+                    v += (1. - d) * msd[k].detach()
