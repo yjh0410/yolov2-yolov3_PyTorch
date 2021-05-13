@@ -13,7 +13,11 @@ def parse_args():
                         help='number of anchor box.')
     parser.add_argument('-size', '--input_size', default=416, type=int,
                         help='input size.')
+    parser.add_argument('--scale', action='store_true', default=False,
+                        help='divide the sizes of anchor boxes by 32 .')
     return parser.parse_args()
+                    
+args = parse_args()
                     
 
 class Box():
@@ -151,13 +155,17 @@ def anchor_box_kmeans(total_gt_boxes, n_anchors, loss_convergence, iters, plus=T
     
     print("k-means result : ") 
     for centroid in centroids:
-        print(round(centroid.w, 2), round(centroid.h, 2), "area: ", round(centroid.w, 2) * round(centroid.h, 2))
+        if args.scale:
+            print("w, h: ", round(centroid.w / 32., 2), round(centroid.h / 32., 2), 
+                "area: ", round(centroid.w / 32., 2) * round(centroid.h / 32., 2))
+        else:
+            print("w, h: ", round(centroid.w, 2), round(centroid.h, 2), 
+                "area: ", round(centroid.w, 2) * round(centroid.h, 2))
     
     return centroids
 
 
 if __name__ == "__main__":
-    args = parse_args()
 
     n_anchors = args.num_anchorbox
     size = args.input_size
@@ -166,10 +174,10 @@ if __name__ == "__main__":
     loss_convergence = 1e-6
     iters_n = 1000
 
-    if dataset == 'voc':
+    if args.dataset == 'voc':
         dataset = VOCDetection(root=VOC_ROOT, transform=BaseTransform([size, size]))
 
-    elif dataset == 'coco':
+    elif args.dataset == 'coco':
         dataset = COCODataset(
                     data_dir=coco_root,
                     img_size=size,
@@ -182,15 +190,15 @@ if __name__ == "__main__":
         if i % 5000 == 0:
             print('Loading datat [%d / %d]' % (i+1, len(dataset)))
 
-        if dataset== 'coco':
+        if args.dataset == 'coco':
             # For COCO
             img, _ = dataset.pull_image(i)
             w, h = img.shape[1], img.shape[0]
             annotation = dataset.pull_anno(i)
 
-        elif dataset == 'voc':
+        elif args.dataset == 'voc':
             # For VOC
-            img = dataset.pull_image(i)
+            img, _ = dataset.pull_image(i)
             w, h = img.shape[1], img.shape[0]
             _, annotation = dataset.pull_anno(i)
 
