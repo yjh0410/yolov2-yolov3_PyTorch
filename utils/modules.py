@@ -104,40 +104,6 @@ class BottleneckCSP(nn.Module):
         return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
 
-class DilateBottleneck(nn.Module):
-    # Standard bottleneck
-    def __init__(self, c1, c2, shortcut=True, d=1, g=1, e=0.5):
-        super(DilateBottleneck, self).__init__()
-        c_ = int(c1 * e)
-        self.branch = nn.Sequential(
-            Conv(c1, c_, k=1),
-            Conv(c_, c_, k=3, p=d, d=d, g=g)
-        )
-        self.add = shortcut and c1 == c2
-
-    def forward(self, x):
-        return x + self.branch(x) if self.add else self.branch(x)
-
-
-class DilateEncoderCSP(nn.Module):
-    """ DilateEncoderCSP """
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, dilation_list=[1, 2, 4, 6]):
-        super(DilateEncoderCSP, self).__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, k=1)
-        self.cv2 = nn.Conv2d(c1, c_, kernel_size=1, bias=False)
-        self.cv3 = nn.Conv2d(c_, c_, kernel_size=1, bias=False)
-        self.cv4 = Conv(2 * c_, c2, k=1)
-        self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
-        self.act = nn.LeakyReLU(0.1, inplace=True)
-        self.m = nn.Sequential(*[DilateBottleneck(c_, c_, shortcut, d=d, g=g, e=1.0) for d in dilation_list])
-
-    def forward(self, x):
-        y1 = self.cv3(self.m(self.cv1(x)))
-        y2 = self.cv2(x)
-        return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
-
-
 class ModelEMA(object):
     def __init__(self, model, decay=0.9999, updates=0):
         # create EMA

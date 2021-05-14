@@ -436,8 +436,12 @@ class ColorAugmentation(object):
         self.std = std
         self.augment = Compose([
             ConvertFromInts(),
+            ToAbsoluteCoords(),
             PhotometricDistort(),
             RandomMirror(),
+            # RandomInvert(),
+            # RandomRotate(),
+            ToPercentCoords(),
             Resize(self.size),
             Normalize(self.mean, self.std)
         ])

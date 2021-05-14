@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import Conv, SPP, BottleneckCSP, UpSample, DilateEncoderCSP
+from utils import Conv, SPP, BottleneckCSP, UpSample
 from backbone import *
 import numpy as np
 import tools
@@ -30,7 +30,6 @@ class YOLOv4(nn.Module):
             SPP(),
             BottleneckCSP(512*4, 1024, n=3, shortcut=False)
         )
-        # self.neck = DilateEncoderCSP(1024, 1024)
 
          # head
         self.head_conv_0 = Conv(1024, 512, k=1)  # 10
