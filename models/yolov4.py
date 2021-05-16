@@ -22,7 +22,6 @@ class YOLOv4(nn.Module):
 
         # backbone cspdarknet-53
         self.backbone = cspdarknet53(pretrained=trainable, hr=hr)
-        # self.backbone = darknet53(pretrained=trainable, hr=hr)
 
         # neck
         self.spp = nn.Sequential(
