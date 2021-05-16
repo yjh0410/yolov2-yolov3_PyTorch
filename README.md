@@ -243,7 +243,7 @@ I train my YOLOv4 on COCO:
 
 <tr><th align="left" bgcolor=#f8f8f8> YOLOv4-512</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 39.2 </td><td bgcolor=white> 59.6 </td><td bgcolor=white> 41.5 </td><td bgcolor=white> 21.0 </td><td bgcolor=white> 42.0 </td><td bgcolor=white> 55.3 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-608</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 39.3 </td><td bgcolor=white> 59.9 </td><td bgcolor=white> 41.4 </td><td bgcolor=white> 22.7 </td><td bgcolor=white> 43.` </td><td bgcolor=white> 52.6 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-608</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 39.3 </td><td bgcolor=white> 59.9 </td><td bgcolor=white> 41.4 </td><td bgcolor=white> 22.7 </td><td bgcolor=white> 43.1 </td><td bgcolor=white> 52.6 </td></tr>
 </table></tbody>
 
 My YOLOv4 is worse the official YOLOv4.
