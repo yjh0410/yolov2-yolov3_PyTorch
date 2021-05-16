@@ -4,6 +4,7 @@ import os
 import random
 import argparse
 import time
+import cv2
 import math
 import numpy as np
 

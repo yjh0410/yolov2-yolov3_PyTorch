@@ -418,8 +418,8 @@ class SSDAugmentation(object):
             Expand(self.mean),
             RandomSampleCrop(),
             RandomMirror(),
-            # RandomInvert(),
-            # RandomRotate(),
+            RandomInvert(),
+            RandomRotate(),
             ToPercentCoords(),
             Resize(self.size),
             Normalize(self.mean, self.std)
@@ -439,8 +439,8 @@ class ColorAugmentation(object):
             ToAbsoluteCoords(),
             PhotometricDistort(),
             RandomMirror(),
-            # RandomInvert(),
-            # RandomRotate(),
+            RandomInvert(),
+            RandomRotate(),
             ToPercentCoords(),
             Resize(self.size),
             Normalize(self.mean, self.std)
