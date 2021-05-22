@@ -24,10 +24,11 @@ class YOLOv4(nn.Module):
         self.backbone = cspdarknet53(pretrained=trainable, hr=hr)
 
         # neck
-        self.spp = nn.Sequential(
+        self.neck = nn.Sequential(
             Conv(1024, 512, k=1),
             SPP(),
-            BottleneckCSP(512*4, 1024, n=3, shortcut=False)
+            Conv(512*4, 1024, k=1),
+            BottleneckCSP(1024, 1024, n=3, shortcut=False)
         )
 
          # head
@@ -253,7 +254,7 @@ class YOLOv4(nn.Module):
         c3, c4, c5 = self.backbone(x)
 
         # neck
-        c5 = self.spp(c5)
+        c5 = self.neck(c5)
 
         # FPN + PAN
         # head
