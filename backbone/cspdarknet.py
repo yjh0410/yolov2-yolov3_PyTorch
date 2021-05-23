@@ -97,6 +97,88 @@ class CSPDarknet53(nn.Module):
         return c3, c4, c5
 
 
+class CSPDarknetSlim(nn.Module):
+    """
+    CSPDarknet_Slim.
+    """
+    def __init__(self, num_classes=1000):
+        super(CSPDarknetSlim, self).__init__()
+            
+        self.layer_1 = nn.Sequential(
+            Conv(3, 32, k=3, p=1),      
+            Conv(32, 64, k=3, p=1, s=2),
+            CSPStage(c1=64, n=1)                       # p1/2
+        )
+        self.layer_2 = nn.Sequential(   
+            Conv(64, 128, k=3, p=1, s=2),             
+            CSPStage(c1=128, n=21)                      # P2/4
+        )
+        self.layer_3 = nn.Sequential(
+            Conv(128, 256, k=3, p=1, s=2),             
+            CSPStage(c1=256, n=1)                      # P3/8
+        )
+        self.layer_4 = nn.Sequential(
+            Conv(256, 512, k=3, p=1, s=2),             
+            CSPStage(c1=512, n=1)                      # P4/16
+        )
+        self.layer_5 = nn.Sequential(
+            Conv(512, 1024, k=3, p=1, s=2),             
+            CSPStage(c1=1024, n=1)                     # P5/32
+        )
+
+
+    def forward(self, x, targets=None):
+        c1 = self.layer_1(x)
+        c2 = self.layer_2(c1)
+        c3 = self.layer_3(c2)
+        c4 = self.layer_4(c3)
+        c5 = self.layer_5(c4)
+
+        return c3, c4, c5
+
+
+class CSPDarknetTiny(nn.Module):
+    """
+    CSPDarknet_Tiny.
+    """
+    def __init__(self, num_classes=1000):
+        super(CSPDarknetTiny, self).__init__()
+            
+        self.layer_1 = nn.Sequential(
+            Conv(3, 16, k=3, p=1),      
+            Conv(16, 32, k=3, p=1, s=2),
+            CSPStage(c1=32, n=1)                       # p1/2
+        )
+        self.layer_2 = nn.Sequential(   
+            Conv(32, 64, k=3, p=1, s=2),             
+            CSPStage(c1=64, n=1)                      # P2/4
+        )
+        self.layer_3 = nn.Sequential(
+            Conv(64, 128, k=3, p=1, s=2),             
+            CSPStage(c1=128, n=1)                      # P3/8
+        )
+        self.layer_4 = nn.Sequential(
+            Conv(128, 256, k=3, p=1, s=2),             
+            CSPStage(c1=256, n=1)                      # P4/16
+        )
+        self.layer_5 = nn.Sequential(
+            Conv(256, 512, k=3, p=1, s=2),             
+            CSPStage(c1=512, n=1)                     # P5/32
+        )
+
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(512, num_classes)
+
+    def forward(self, x, targets=None):
+        c1 = self.layer_1(x)
+        c2 = self.layer_2(c1)
+        c3 = self.layer_3(c2)
+        c4 = self.layer_4(c3)
+        c5 = self.layer_5(c4)
+
+        return c3, c4, c5
+
+
 def cspdarknet53(pretrained=False, hr=False, **kwargs):
     """Constructs a CSPDarknet_X model.
 
@@ -112,6 +194,42 @@ def cspdarknet53(pretrained=False, hr=False, **kwargs):
         else:
             print('Loading the cspdarknet53 ...')
             model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet53/cspdarknet53_75.7.pth', map_location='cuda'), strict=False)
+    return model
+
+
+def cspdarknet_slim(pretrained=False, hr=False, **kwargs):
+    """Constructs a CSPDarknet_Slim model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = CSPDarknetSlim()
+    if pretrained:
+        path_to_dir = os.path.dirname(os.path.abspath(__file__))
+        if hr:
+            print('Loading the cspdarknet_slim-448 ...')
+            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_slim/cspdarknet_slim_hr_76.9.pth', map_location='cuda'), strict=False)
+        else:
+            print('Loading the cspdarknet_slim ...')
+            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_slim/cspdarknet_slim_72.4.pth', map_location='cuda'), strict=False)
+    return model
+
+
+def cspdarknet_tiny(pretrained=False, hr=False, **kwargs):
+    """Constructs a CSPDarknet_Tiny model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = CSPDarknetTiny()
+    if pretrained:
+        path_to_dir = os.path.dirname(os.path.abspath(__file__))
+        if hr:
+            print('Loading the cspdarknet_tiny-448 ...')
+            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_hr_76.9.pth', map_location='cuda'), strict=False)
+        else:
+            print('Loading the cspdarknet_tiny ...')
+            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_75.7.pth', map_location='cuda'), strict=False)
     return model
 
 
