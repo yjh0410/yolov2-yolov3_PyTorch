@@ -208,7 +208,7 @@ def cspdarknet_slim(pretrained=False, hr=False, **kwargs):
         path_to_dir = os.path.dirname(os.path.abspath(__file__))
         if hr:
             print('Loading the cspdarknet_slim-448 ...')
-            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_slim/cspdarknet_slim_hr_76.9.pth', map_location='cuda'), strict=False)
+            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_slim/cspdarknet_slim_hr_71.9.pth', map_location='cuda'), strict=False)
         else:
             print('Loading the cspdarknet_slim ...')
             model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_slim/cspdarknet_slim_72.4.pth', map_location='cuda'), strict=False)
@@ -226,7 +226,7 @@ def cspdarknet_tiny(pretrained=False, hr=False, **kwargs):
         path_to_dir = os.path.dirname(os.path.abspath(__file__))
         if hr:
             print('Loading the cspdarknet_tiny-448 ...')
-            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_hr_76.9.pth', map_location='cuda'), strict=False)
+            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_hr_65.7.pth', map_location='cuda'), strict=False)
         else:
             print('Loading the cspdarknet_tiny ...')
             model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_66.0.pth', map_location='cuda'), strict=False)
