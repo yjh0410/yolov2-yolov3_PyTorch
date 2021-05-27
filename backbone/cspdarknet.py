@@ -166,8 +166,8 @@ class CSPDarknetTiny(nn.Module):
             CSPStage(c1=512, n=1)                     # P5/32
         )
 
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512, num_classes)
+        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        # self.fc = nn.Linear(512, num_classes)
 
     def forward(self, x, targets=None):
         c1 = self.layer_1(x)
@@ -229,7 +229,7 @@ def cspdarknet_tiny(pretrained=False, hr=False, **kwargs):
             model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_hr_76.9.pth', map_location='cuda'), strict=False)
         else:
             print('Loading the cspdarknet_tiny ...')
-            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_75.7.pth', map_location='cuda'), strict=False)
+            model.load_state_dict(torch.load(path_to_dir + '/weights/cspdarknet_tiny/cspdarknet_tiny_66.0.pth', map_location='cuda'), strict=False)
     return model
 
 
