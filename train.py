@@ -210,6 +210,13 @@ def train():
                    hr=hr)
     model = net
     model.to(device).train()
+
+    # keep training
+    if args.resume is not None:
+        print('keep training model: %s' % (args.resume))
+        model.load_state_dict(torch.load(args.resume, map_location=device))
+
+    # EMA
     ema = ModelEMA(model) if args.ema else None
 
     # use tfboard
@@ -222,11 +229,6 @@ def train():
 
         writer = SummaryWriter(log_path)
     
-    # keep training
-    if args.resume is not None:
-        print('keep training model: %s' % (args.resume))
-        model.load_state_dict(torch.load(args.resume, map_location=device))
-
     # optimizer setup
     base_lr = args.lr
     tmp_lr = base_lr
