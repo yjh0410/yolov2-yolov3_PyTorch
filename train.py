@@ -270,7 +270,7 @@ def train():
                 r = cfg['random_size_range']
                 train_size = random.randint(r[0], r[1]) * 32
                 model.set_grid(train_size)
-            if args.multi_scale and max_epoch - epoch > 10:
+            if args.multi_scale:
                 # interpolate
                 images = torch.nn.functional.interpolate(images, size=train_size, mode='bilinear', align_corners=False)
             
