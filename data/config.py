@@ -13,7 +13,7 @@ yolov2_d19_cfg = {
     'anchor_size_coco': [[0.53, 0.79], [1.71, 2.36], [2.89, 6.44], [6.33, 3.79], [9.03, 9.74]],
     # train
     'lr_epoch': (150, 200),
-    'max_epoch': 260,
+    'max_epoch': 250,
     'ignore_thresh': 0.5
 }
 
@@ -30,7 +30,7 @@ yolov2_r50_cfg = {
     'anchor_size_coco': [[0.53, 0.79], [1.71, 2.36], [2.89, 6.44], [6.33, 3.79], [9.03, 9.74]],
     # train
     'lr_epoch': (150, 200),
-    'max_epoch': 260,
+    'max_epoch': 250,
     'ignore_thresh': 0.5
 }
 
@@ -68,7 +68,7 @@ yolov3_d53_cfg = {
                          [301.12, 150.4 ], [172.16, 285.76], [348.16, 341.12]],
     # train
     'lr_epoch': (150, 200),
-    'max_epoch': 260,
+    'max_epoch': 250,
     'ignore_thresh': 0.5
 }
 
@@ -87,7 +87,7 @@ yolov3_tiny_cfg = {
                          [168.88, 93.59], [154.96, 257.45], [334.74, 302.47]],
     # train
     'lr_epoch': (150, 200),
-    'max_epoch': 260,
+    'max_epoch': 250,
     'ignore_thresh': 0.5
 }
 
@@ -109,6 +109,6 @@ yolov4_cfg = {
                          [301.12, 150.4 ], [172.16, 285.76], [348.16, 341.12]],
     # train
     'lr_epoch': (150, 200),
-    'max_epoch': 260,
+    'max_epoch': 250,
     'ignore_thresh': 0.5
 }

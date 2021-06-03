@@ -266,13 +266,10 @@ def train():
 
             # multi-scale trick
             if iter_i % 10 == 0 and iter_i > 0 and args.multi_scale:
-                if max_epoch - epoch > 10:
-                    # randomly choose a new size
-                    r = cfg['random_size_range']
-                    train_size = random.randint(r[0], r[1]) * 32
-                    model.set_grid(train_size)
-                else:
-                    train_size = cfg['train_size']
+                # randomly choose a new size
+                r = cfg['random_size_range']
+                train_size = random.randint(r[0], r[1]) * 32
+                model.set_grid(train_size)
             if args.multi_scale and max_epoch - epoch > 10:
                 # interpolate
                 images = torch.nn.functional.interpolate(images, size=train_size, mode='bilinear', align_corners=False)
