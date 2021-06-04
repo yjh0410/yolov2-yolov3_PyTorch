@@ -237,23 +237,24 @@ I train my YOLOv4 on COCO:
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-320</th><td bgcolor=white> COCO-val</td><td bgcolor=white> 34.9 </td><td bgcolor=white> 54.5 </td><td bgcolor=white> 36.5 </td><td bgcolor=white> 14.0 </td><td bgcolor=white> 38.0 </td><td bgcolor=white> 53.6 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-320</th><td bgcolor=white> COCO-val</td><td bgcolor=white> 36.0 </td><td bgcolor=white> 55.8 </td><td bgcolor=white> 37.6 </td><td bgcolor=white> 15.7 </td><td bgcolor=white> 39.7 </td><td bgcolor=white> 53.6 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-416</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 37.6 </td><td bgcolor=white> 57.6 </td><td bgcolor=white> 39.5 </td><td bgcolor=white> 18.1 </td><td bgcolor=white> 40.4 </td><td bgcolor=white> 55.5 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-416</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 38.3 </td><td bgcolor=white> 58.2 </td><td bgcolor=white> 40.0 </td><td bgcolor=white> 20.6 </td><td bgcolor=white> 41.7 </td><td bgcolor=white> 54.0 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-512</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 39.2 </td><td bgcolor=white> 59.6 </td><td bgcolor=white> 41.5 </td><td bgcolor=white> 21.0 </td><td bgcolor=white> 42.0 </td><td bgcolor=white> 55.3 </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-608</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 39.3 </td><td bgcolor=white> 59.9 </td><td bgcolor=white> 41.4 </td><td bgcolor=white> 22.7 </td><td bgcolor=white> 43.1 </td><td bgcolor=white> 52.6 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-512</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 38.8 </td><td bgcolor=white> 59.1 </td><td bgcolor=white> 41.0 </td><td bgcolor=white> 22.8 </td><td bgcolor=white> 42.2 </td><td bgcolor=white> 52.3 </td></tr>
 </table></tbody>
 
 My YOLOv4 is worse than the official YOLOv4.
 
 Next, I'm trying to use some tricks to optimize my YOLOv4:
-- mosaic augmentation
-- EMA
+- [x]mosaic augmentation
+- [x]EMA
 - Grid Sensitive
-- CoordConv
 - Matrix NMS
+
+Mosaic augmentation exactly improves the AP of small objects, but it damages the AP of large objects.
+
+I won't update this project anymore, I'm tired(I have only 1 GPU).
 
 # Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
