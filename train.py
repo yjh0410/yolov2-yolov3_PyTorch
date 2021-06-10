@@ -141,7 +141,7 @@ def train():
         train_size = cfg['train_size']
         val_size = cfg['val_size']
     else:
-        train_size = val_size = cfg['val_size']
+        train_size = val_size = cfg['train_size']  # cfg['val_size']
 
     # mosaic augmentation
     if args.ema:
