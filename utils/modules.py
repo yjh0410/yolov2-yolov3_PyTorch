@@ -70,6 +70,44 @@ class SPP(nn.Module):
         return x
 
 
+class DilateBottleneck(nn.Module):
+    # dilate bottleneck
+    def __init__(self, c, d=1, e=0.5):
+        super(DilateBottleneck, self).__init__()
+        c_ = int(c * e)
+        self.branch = nn.Sequential(
+            Conv(c, c_, k=1),
+            Conv(c, c, k=3, p=d, d=d),
+            Conv(c, c, k=1)
+        )
+
+    def forward(self, x):
+        return x + self.branch(x)
+
+
+class DilateEncoder(nn.Module):
+    """ DilateEncoder """
+    def __init__(self, c1, c2, dilation_list=[2, 4, 6, 8]):
+        super(DilateEncoder, self).__init__()
+        c_ = 512
+        self.projector = nn.Sequential(
+            Conv(c1, c_, k=1, act=False),
+            Conv(c_, c_, k=3, p=1, act=False)
+        )
+        encoders = []
+        for d in dilation_list:
+            encoders.append(DilateBottleneck(c1=c_, d=d))
+        self.encoders = nn.Sequential(*encoders)
+        self.expand = Conv(c_, c2, k=1, act=False)
+
+    def forward(self, x):
+        x = self.projector(x)
+        x = self.encoders(x)
+        x = self.expand(x)
+
+        return x
+
+
 # Copy from yolov5
 class Bottleneck(nn.Module):
     # Standard bottleneck

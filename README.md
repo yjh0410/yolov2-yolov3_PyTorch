@@ -15,12 +15,14 @@ In this project, you can enjoy:
 
 
 I just want to provide a good YOLO project for everyone who is interested in Object Detection.
+
 # Weights
-You can download all my models from my BaiDuYunDisk.
+Google Drive: https://drive.google.com/drive/folders/1T5hHyGICbFSdu6u2_vqvxn_puotvPsbd?usp=sharing 
 
-Link: https://pan.baidu.com/s/1tSylvzOVFReUAvaAxKRSwg 
-
+BaiDuYunDisk: https://pan.baidu.com/s/1tSylvzOVFReUAvaAxKRSwg 
 Password d266
+
+You can download all my models from the above links.
 
 # DarkNet-19, DarkNet-53, CSPDarkNet-53
 First of all, I reproduce the backbones used in YOLO.
