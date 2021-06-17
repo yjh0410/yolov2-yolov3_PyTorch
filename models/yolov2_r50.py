@@ -8,7 +8,7 @@ import tools
 
 
 class YOLOv2R50(nn.Module):
-    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.6, anchor_size=None):
+    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.6, anchor_size=None, hr=False):
         super(YOLOv2R50, self).__init__()
         self.device = device
         self.input_size = input_size
@@ -227,8 +227,7 @@ class YOLOv2R50(nn.Module):
                                                                   pred_cls=cls_pred,
                                                                   pred_txtytwth=txtytwth_pred,
                                                                   pred_iou=iou_pred,
-                                                                  label=target,
-                                                                  num_classes=self.num_classes
+                                                                  label=target
                                                                   )
 
             return conf_loss, cls_loss, bbox_loss, iou_loss   

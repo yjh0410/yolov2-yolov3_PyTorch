@@ -202,7 +202,7 @@ def gt_creator(input_size, stride, label_lists, anchor_size):
     Output:
         gt_tensor : ndarray -> shape = [batch_size, anchor_number, 1+1+4, grid_cell number ]
     """
-    assert len(input_size) > 0 and len(label_lists) > 0
+
     # prepare the all empty gt datas
     batch_size = len(label_lists)
     h = w = input_size
