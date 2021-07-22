@@ -275,7 +275,7 @@ Just run ```sh data/scripts/COCO2017.sh```. You will get COCO train2017, val2017
 # Train
 ## VOC
 ```Shell
-python train.py -d voc --cuda -v [select a model] -hr -ms
+python train.py -d voc --cuda -v [select a model] -hr -ms --ema
 ```
 
 You can run ```python train.py -h``` to check all optional argument.
@@ -283,12 +283,12 @@ You can run ```python train.py -h``` to check all optional argument.
 ## COCO
 If you have only one gpu:
 ```Shell
-python train.py -d coco --cuda -v [select a model] -hr -ms
+python train.py -d coco --cuda -v [select a model] -hr -ms --ema
 ```
 
 If you have multi gpus like 8, and you put 4 images on each gpu:
 ```Shell
-python -m torch.distributed.launch --nproc_per_node=8 train.py -d coco --cuda -v [select a model] -hr -ms \
+python -m torch.distributed.launch --nproc_per_node=8 train.py -d coco --cuda -v [select a model] -hr -ms --ema \
                                                                         -dist \
                                                                         --sybn \
                                                                         --num_gpu 8\

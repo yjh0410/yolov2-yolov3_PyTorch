@@ -90,25 +90,3 @@ yolov3_tiny_cfg = {
     'max_epoch': 250,
     'ignore_thresh': 0.5
 }
-
-# YOLOv4
-yolov4_cfg = {
-    # network
-    'backbone': 'cspd53',
-    # for multi-scale trick
-    'train_size': 640,
-    'val_size': 416,
-    'random_size_range': [10, 20],
-    # anchor size
-    # anchor size
-    'anchor_size_voc': [[32.64, 47.68], [50.24, 108.16], [126.72, 96.32],     
-                        [78.4, 201.92], [178.24, 178.56], [129.6, 294.72],     
-                        [331.84, 194.56], [227.84, 325.76], [365.44, 358.72]],
-    'anchor_size_coco': [[12.48, 19.2], [31.36, 46.4],[46.4, 113.92],
-                         [97.28, 55.04], [133.12, 127.36], [79.04, 224.],
-                         [301.12, 150.4 ], [172.16, 285.76], [348.16, 341.12]],
-    # train
-    'lr_epoch': (100, 150),
-    'max_epoch': 200,
-    'ignore_thresh': 0.5
-}
