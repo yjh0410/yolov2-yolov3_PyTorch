@@ -16,7 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='YOLO Demo Detection')
 
     parser.add_argument('-v', '--version', default='yolo_v2',
-                        help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny, yolov4')
+                        help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny')
     parser.add_argument('--trained_model', default='weights/',
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--mode', default='image',
@@ -212,10 +212,6 @@ def run():
         from models.yolov3_spp import YOLOv3Spp as yolo_net
         cfg = config.yolov3_d53_cfg
 
-    elif model_name == 'yolov4':
-        from models.yolov4 import YOLOv4 as yolo_net
-        cfg = config.yolov4_cfg
-
     elif model_name == 'yolov3_tiny':
         from models.yolov3_tiny import YOLOv3tiny as yolo_net
         cfg = config.yolov3_tiny_cfg
@@ -229,7 +225,7 @@ def run():
     anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
     net = yolo_net(device=device, 
                    input_size=input_size, 
-                   num_classes=num_classes, 
+                   num_classes=80, 
                    trainable=False, 
                    anchor_size=anchor_size)
 
