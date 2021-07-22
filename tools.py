@@ -32,33 +32,6 @@ class MSEWithLogitsLoss(nn.Module):
             return loss
 
 
-def generate_anchor(input_size, stride, anchor_scale, anchor_aspect):
-    """
-        The function is used to design anchor boxes by ourselves as long as you provide the scale and aspect of anchor boxes.
-        Input:
-            input_size : list -> the image resolution used in training stage and testing stage.
-            stride : int -> the downSample of the CNN, such as 32, 64 and so on.
-            anchor_scale : list -> it contains the area ratio of anchor boxes. For example, anchor_scale = [0.1, 0.5]
-            anchor_aspect : list -> it contains the aspect ratios of anchor boxes for various anchor area.
-                            For example, anchor_aspect = [[1.0, 2.0], [3.0, 1/3]]. And len(anchor_aspect) must 
-                            be equal to len(anchor_scale).
-        Output:
-            total_anchor_size : list -> [[h_1, w_1], [h_2, w_2], ..., [h_n, w_n]].
-    """
-    assert len(anchor_scale) == len(anchor_aspect)
-    h, w = input_size
-    hs, ws = h // stride, w // stride
-    S_fmap = hs * ws
-    total_anchor_size = []
-    for ab_scale, aspect_ratio in zip(anchor_scale, anchor_aspect):
-        for a in aspect_ratio:
-            S_ab = S_fmap * ab_scale
-            ab_w = np.floor(np.sqrt(S_ab))
-            ab_h =ab_w * a
-            total_anchor_size.append([ab_w, ab_h])
-    return total_anchor_size
-
-
 def compute_iou(anchor_boxes, gt_box):
     """
     Input:
