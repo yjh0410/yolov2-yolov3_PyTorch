@@ -1,7 +1,6 @@
 import math
 import torch
 import torch.nn as nn
-import torch.backends.cudnn as cudnn
 from copy import deepcopy
 
 
@@ -68,78 +67,6 @@ class SPP(nn.Module):
         x = torch.cat([x, x_1, x_2, x_3], dim=1)
 
         return x
-
-
-class DilateBottleneck(nn.Module):
-    # dilate bottleneck
-    def __init__(self, c, d=1, e=0.5):
-        super(DilateBottleneck, self).__init__()
-        c_ = int(c * e)
-        self.branch = nn.Sequential(
-            Conv(c, c_, k=1),
-            Conv(c, c, k=3, p=d, d=d),
-            Conv(c, c, k=1)
-        )
-
-    def forward(self, x):
-        return x + self.branch(x)
-
-
-class DilateEncoder(nn.Module):
-    """ DilateEncoder """
-    def __init__(self, c1, c2, dilation_list=[2, 4, 6, 8]):
-        super(DilateEncoder, self).__init__()
-        c_ = 512
-        self.projector = nn.Sequential(
-            Conv(c1, c_, k=1, act=False),
-            Conv(c_, c_, k=3, p=1, act=False)
-        )
-        encoders = []
-        for d in dilation_list:
-            encoders.append(DilateBottleneck(c1=c_, d=d))
-        self.encoders = nn.Sequential(*encoders)
-        self.expand = Conv(c_, c2, k=1, act=False)
-
-    def forward(self, x):
-        x = self.projector(x)
-        x = self.encoders(x)
-        x = self.expand(x)
-
-        return x
-
-
-# Copy from yolov5
-class Bottleneck(nn.Module):
-    # Standard bottleneck
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
-        super(Bottleneck, self).__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, k=1)
-        self.cv2 = Conv(c_, c2, k=3, p=1, g=g)
-        self.add = shortcut and c1 == c2
-
-    def forward(self, x):
-        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
-
-
-# Copy from yolov5
-class BottleneckCSP(nn.Module):
-    # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
-        super(BottleneckCSP, self).__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, k=1)
-        self.cv2 = nn.Conv2d(c1, c_, kernel_size=1, bias=False)
-        self.cv3 = nn.Conv2d(c_, c_, kernel_size=1, bias=False)
-        self.cv4 = Conv(2 * c_, c2, k=1)
-        self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
-        self.act = nn.LeakyReLU(0.1, inplace=True)
-        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
-
-    def forward(self, x):
-        y1 = self.cv3(self.m(self.cv1(x)))
-        y2 = self.cv2(x)
-        return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
 
 class ModelEMA(object):

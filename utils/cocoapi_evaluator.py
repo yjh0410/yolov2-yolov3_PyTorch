@@ -50,6 +50,9 @@ class COCOAPIEvaluator():
         self.transform = transform
         self.device = device
 
+        self.ap50_95 = 0.
+        self.ap50 = 0.
+
     def evaluate(self, model):
         """
         COCO average precision (AP) Evaluation. Iterate inference on the test dataset
@@ -117,9 +120,11 @@ class COCOAPIEvaluator():
             cocoEval.accumulate()
             cocoEval.summarize()
 
-            ap50, ap50_95 = cocoEval.stats[0], cocoEval.stats[1]
+            ap50_95, ap50 = cocoEval.stats[0], cocoEval.stats[1]
             print('ap50_95 : ', ap50_95)
             print('ap50 : ', ap50)
+            self.ap50_95 = ap50_95
+            self.ap50 = ap50
 
             return ap50, ap50_95
         else:

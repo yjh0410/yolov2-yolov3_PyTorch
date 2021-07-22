@@ -1,8 +1,5 @@
-import torch
-from torchvision import transforms
 import cv2
 import numpy as np
-import types
 from numpy import random
 
 
@@ -329,32 +326,6 @@ class RandomMirror(object):
         return image, boxes, classes
 
 
-class RandomInvert(object):
-    def __call__(self, image, boxes, classes):
-        height, _, _ = image.shape
-        if random.randint(2):
-            image = image[::-1, :]
-            boxes = boxes.copy()
-            boxes[:, 1::2] = height - boxes[:, 3::-2]
-        return image, boxes, classes
-
-
-class RandomRotate(object):
-    def __call__(self, image, boxes, classes):
-        height, weight, _ = image.shape
-        if random.randint(2):
-            # rorate 90
-            image_b = image[:, :, 0].T
-            image_g = image[:, :, 1].T
-            image_r = image[:, :, 2].T
-            image = np.stack([image_b, image_g, image_r], axis=2)
-            boxes = boxes.copy()
-            x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
-            boxes = np.stack([y1, x1, y2, x2], axis=1)
-            # In fact, 270 = 90 + mirror
-        return image, boxes, classes
-
-
 class SwapChannels(object):
     """Transforms a tensorized image by swapping the channels in the order
      specified in the swap tuple.
@@ -409,17 +380,16 @@ class PhotometricDistort(object):
 class SSDAugmentation(object):
     def __init__(self, size=416, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
         self.mean = mean
+        self.mean_255 = (mean[0]*255, mean[1]*255, mean[2]*255)
         self.size = size
         self.std = std
         self.augment = Compose([
             ConvertFromInts(),
             ToAbsoluteCoords(),
             PhotometricDistort(),
-            Expand(self.mean),
+            Expand(self.mean_255),
             RandomSampleCrop(),
             RandomMirror(),
-            # RandomInvert(),
-            # RandomRotate(),
             ToPercentCoords(),
             Resize(self.size),
             Normalize(self.mean, self.std)
@@ -439,8 +409,6 @@ class ColorAugmentation(object):
             ToAbsoluteCoords(),
             PhotometricDistort(),
             RandomMirror(),
-            # RandomInvert(),
-            # RandomRotate(),
             ToPercentCoords(),
             Resize(self.size),
             Normalize(self.mean, self.std)

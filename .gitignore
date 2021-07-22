@@ -1,0 +1,6 @@
+*.pt
+*.pth
+*.txt
+*.pkl
+__pycache__
+.vscode

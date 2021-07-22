@@ -11,7 +11,6 @@ In this project, you can enjoy:
 - YOLOv3
 - YOLOv3Spp
 - YOLOv3Tiny
-- YOLOv4 (still trying ...)
 
 
 I just want to provide a good YOLO project for everyone who is interested in Object Detection.
@@ -232,31 +231,6 @@ We evaluate our YOLOv3Tiny on COCO-val with inputsize 608:
 
 </table></tbody>
 
-# YOLOv4
-
-I train my YOLOv4 on COCO:
-
-<table><tbody>
-<tr><th align="left" bgcolor=#f8f8f8> </th>     <td bgcolor=white> data </td><td bgcolor=white> AP </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white> AP_S </td><td bgcolor=white> AP_M </td><td bgcolor=white> AP_L </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-320</th><td bgcolor=white> COCO-val</td><td bgcolor=white> 36.0 </td><td bgcolor=white> 55.8 </td><td bgcolor=white> 37.6 </td><td bgcolor=white> 15.7 </td><td bgcolor=white> 39.7 </td><td bgcolor=white> 53.6 </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-416</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 38.3 </td><td bgcolor=white> 58.2 </td><td bgcolor=white> 40.0 </td><td bgcolor=white> 20.6 </td><td bgcolor=white> 41.7 </td><td bgcolor=white> 54.0 </td></tr>
-
-<tr><th align="left" bgcolor=#f8f8f8> YOLOv4-512</th><td bgcolor=white> COCO-val </td><td bgcolor=white> 38.8 </td><td bgcolor=white> 59.1 </td><td bgcolor=white> 41.0 </td><td bgcolor=white> 22.8 </td><td bgcolor=white> 42.2 </td><td bgcolor=white> 52.3 </td></tr>
-</table></tbody>
-
-My YOLOv4 is worse than the official YOLOv4.
-
-Next, I'm trying to use some tricks to optimize my YOLOv4:
-- [x]mosaic augmentation
-- [x]EMA
-- Grid Sensitive
-- Matrix NMS
-
-Mosaic augmentation exactly improves the AP of small objects, but it damages the AP of large objects.
-
-I won't update this project anymore, I'm tired(I have only 1 GPU).
 
 # Installation
 - Pytorch-gpu 1.1.0/1.2.0/1.3.0
@@ -307,10 +281,19 @@ python train.py -d voc --cuda -v [select a model] -hr -ms
 You can run ```python train.py -h``` to check all optional argument.
 
 ## COCO
+If you have only one gpu:
 ```Shell
 python train.py -d coco --cuda -v [select a model] -hr -ms
 ```
 
+If you have multi gpus like 8, and you put 4 images on each gpu:
+```Shell
+python -m torch.distributed.launch --nproc_per_node=8 train.py -d coco --cuda -v [select a model] -hr -ms \
+                                                                        -dist \
+                                                                        --sybn \
+                                                                        --num_gpu 8\
+                                                                        --batch_size 4
+```
 
 # Test
 ## VOC
