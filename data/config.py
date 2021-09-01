@@ -56,7 +56,7 @@ yolov3_d53_cfg = {
     # network
     'backbone': 'd53',
     # for multi-scale trick
-    'train_size': 640,
+    'train_size': 608,
     'val_size': 416,
     'random_size_range': [10, 19],
     # anchor size
