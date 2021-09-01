@@ -22,6 +22,7 @@ from data import BaseTransform, detection_collate
 import tools
 
 from utils import distributed_utils
+from utils.com_paras_flops import FLOPs_and_Params
 from utils.augmentations import SSDAugmentation, ColorAugmentation
 from utils.cocoapi_evaluator import COCOAPIEvaluator
 from utils.vocapi_evaluator import VOCAPIEvaluator
@@ -224,6 +225,8 @@ def train():
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model = model.to(device)
+    # compute FLOPs and Params
+    FLOPs_and_Params(model=model, size=608)
 
     # distributed
     if args.distributed and args.num_gpu > 1:
