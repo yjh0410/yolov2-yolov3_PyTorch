@@ -226,7 +226,7 @@ def train():
 
     model = model.to(device)
     # compute FLOPs and Params
-    FLOPs_and_Params(model=model, size=608)
+    FLOPs_and_Params(model=model, size=train_size)
 
     # distributed
     if args.distributed and args.num_gpu > 1:
