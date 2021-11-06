@@ -1,73 +1,112 @@
 import os
 import argparse
 import torch
-import torch.nn as nn
 import torch.backends.cudnn as cudnn
-from data import *
-from data import config
+from data.voc0712 import VOC_CLASSES, VOCDetection
+from data.coco2017 import COCODataset, coco_class_index, coco_class_labels
+from data import config, BaseTransform
 import numpy as np
 import cv2
-import tools
 import time
 
 
 parser = argparse.ArgumentParser(description='YOLO Detection')
-parser.add_argument('-v', '--version', default='yolo_v2',
-                    help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny')
-parser.add_argument('-d', '--dataset', default='voc',
-                    help='voc, coco-val.')
+# basic
 parser.add_argument('-size', '--input_size', default=416, type=int,
                     help='input_size')
-parser.add_argument('--trained_model', default='weight/voc/',
+parser.add_argument('--cuda', action='store_true', default=False, 
+                    help='use cuda.')
+# model
+parser.add_argument('-v', '--version', default='yolo_v2',
+                    help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny')
+parser.add_argument('--trained_model', default='weight/',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--conf_thresh', default=0.1, type=float,
                     help='Confidence threshold')
 parser.add_argument('--nms_thresh', default=0.50, type=float,
                     help='NMS threshold')
+# dataset
+parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
+                    help='dataset root')
+parser.add_argument('-d', '--dataset', default='voc',
+                    help='voc or coco')
+# visualize
 parser.add_argument('--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
-parser.add_argument('--cuda', action='store_true', default=False, 
-                    help='use cuda.')
+parser.add_argument('--show', action='store_true', default=False,
+                    help='show the visulization results.')
+
 
 args = parser.parse_args()
 
 
-def vis(img, bboxes, scores, cls_inds, thresh, class_colors, class_names, class_indexs=None, dataset='voc'):
-    if dataset == 'voc':
-        for i, box in enumerate(bboxes):
-            cls_indx = cls_inds[i]
-            xmin, ymin, xmax, ymax = box
-            if scores[i] > thresh:
-                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_colors[int(cls_indx)], 1)
-                cv2.rectangle(img, (int(xmin), int(abs(ymin)-20)), (int(xmax), int(ymin)), class_colors[int(cls_indx)], -1)
-                mess = '%s' % (class_names[int(cls_indx)])
-                cv2.putText(img, mess, (int(xmin), int(ymin-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+def plot_bbox_labels(img, bbox, label=None, cls_color=None, text_scale=0.4):
+    x1, y1, x2, y2 = bbox
+    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+    t_size = cv2.getTextSize(label, 0, fontScale=1, thickness=2)[0]
+    # plot bbox
+    cv2.rectangle(img, (x1, y1), (x2, y2), cls_color, 2)
+    
+    if label is not None:
+        # plot title bbox
+        cv2.rectangle(img, (x1, y1-t_size[1]), (int(x1 + t_size[0] * text_scale), y1), cls_color, -1)
+        # put the test on the title bbox
+        cv2.putText(img, label, (int(x1), int(y1 - 5)), 0, text_scale, (0, 0, 0), 1, lineType=cv2.LINE_AA)
 
-    elif dataset == 'coco-val' and class_indexs is not None:
-        for i, box in enumerate(bboxes):
-            cls_indx = cls_inds[i]
-            xmin, ymin, xmax, ymax = box
-            if scores[i] > thresh:
-                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_colors[int(cls_indx)], 1)
-                cv2.rectangle(img, (int(xmin), int(abs(ymin)-20)), (int(xmax), int(ymin)), class_colors[int(cls_indx)], -1)
-                cls_id = class_indexs[int(cls_indx)]
-                cls_name = class_names[cls_id]
-                # mess = '%s: %.3f' % (cls_name, scores[i])
-                mess = '%s' % (cls_name)
-                cv2.putText(img, mess, (int(xmin), int(ymin-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+    return img
+
+
+def visualize(img, 
+              bboxes, 
+              scores, 
+              cls_inds, 
+              vis_thresh, 
+              class_colors, 
+              class_names, 
+              class_indexs=None, 
+              dataset_name='voc'):
+    ts = 0.4
+    for i, bbox in enumerate(bboxes):
+        if scores[i] > vis_thresh:
+            cls_id = int(cls_inds[i])
+            if dataset_name == 'coco':
+                cls_color = class_colors[cls_id]
+                cls_id = class_indexs[cls_id]
+            else:
+                cls_color = class_colors[cls_id]
+                
+            if len(class_names) > 1:
+                mess = '%s: %.2f' % (class_names[cls_id], scores[i])
+            else:
+                cls_color = [255, 0, 0]
+                mess = None
+            img = plot_bbox_labels(img, bbox, mess, cls_color, text_scale=ts)
 
     return img
         
 
-def test(net, device, testset, transform, thresh, class_colors=None, class_names=None, class_indexs=None, dataset='voc'):
-    num_images = len(testset)
+def test(net, 
+         device, 
+         dataset, 
+         transform, 
+         vis_thresh, 
+         class_colors=None, 
+         class_names=None, 
+         class_indexs=None, 
+         dataset_name='voc'):
+
+    num_images = len(dataset)
+    save_path = os.path.join('det_results/', args.dataset, args.version)
+    os.makedirs(save_path, exist_ok=True)
+
     for index in range(num_images):
         print('Testing image {:d}/{:d}....'.format(index+1, num_images))
-        img, _ = testset.pull_image(index)
-        h, w, _ = img.shape
+        image, _ = dataset.pull_image(index)
+        h, w, _ = image.shape
+        scale = np.array([[w, h, w, h]])
 
         # to tensor
-        x = torch.from_numpy(transform(img)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
+        x = torch.from_numpy(transform(image)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
         x = x.unsqueeze(0).to(device)
 
         t0 = time.time()
@@ -75,16 +114,26 @@ def test(net, device, testset, transform, thresh, class_colors=None, class_names
         bboxes, scores, cls_inds = net(x)
         print("detection time used ", time.time() - t0, "s")
         
-        # scale each detection back up to the image
-        scale = np.array([[w, h, w, h]])
-        # map the boxes to origin image scale
+        # rescale
         bboxes *= scale
 
-        img_processed = vis(img, bboxes, scores, cls_inds, thresh, class_colors, class_names, class_indexs, dataset)
-        cv2.imshow('detection', img_processed)
-        cv2.waitKey(0)
-        # print('Saving the' + str(index) + '-th image ...')
-        # cv2.imwrite('test_images/' + args.dataset+ '3/' + str(index).zfill(6) +'.jpg', img)
+        # vis detection
+        img_processed = visualize(
+                            img=image,
+                            bboxes=bboxes,
+                            scores=scores,
+                            cls_inds=cls_inds,
+                            vis_thresh=vis_thresh,
+                            class_colors=class_colors,
+                            class_names=class_names,
+                            class_indexs=class_indexs,
+                            dataset_name=dataset_name
+                            )
+        if args.show:
+            cv2.imshow('detection', img_processed)
+            cv2.waitKey(0)
+        # save result
+        cv2.imwrite(os.path.join(save_path, str(index).zfill(6) +'.jpg'), img_processed)
 
 
 if __name__ == '__main__':
@@ -102,25 +151,27 @@ if __name__ == '__main__':
     # dataset
     if args.dataset == 'voc':
         print('test on voc ...')
+        data_dir = os.path.join(args.data_root, 'VOCdevkit')
         class_names = VOC_CLASSES
         class_indexs = None
         num_classes = 20
-        dataset = VOCDetection(root=VOC_ROOT, 
-                                image_sets=[('2007', 'test')], 
-                                transform=None)
+        dataset = VOCDetection(root=data_dir, 
+                                image_sets=[('2007', 'test')])
 
-    elif args.dataset == 'coco-val':
+    elif args.dataset == 'coco':
         print('test on coco-val ...')
+        data_dir = os.path.join(args.data_root, 'COCO')
         class_names = coco_class_labels
         class_indexs = coco_class_index
         num_classes = 80
         dataset = COCODataset(
-                    data_dir=coco_root,
+                    data_dir=data_dir,
                     json_file='instances_val2017.json',
-                    name='val2017',
-                    img_size=input_size)
+                    name='val2017')
 
-    class_colors = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(num_classes)]
+    class_colors = [(np.random.randint(255), 
+                     np.random.randint(255),
+                     np.random.randint(255)) for _ in range(num_classes)]
 
     # model
     model_name = args.version
@@ -160,6 +211,8 @@ if __name__ == '__main__':
                    input_size=input_size, 
                    num_classes=num_classes, 
                    trainable=False, 
+                   conf_thresh=args.conf_thresh,
+                   nms_thresh=args.nms_thresh,
                    anchor_size=anchor_size)
 
     # load weight
@@ -170,11 +223,11 @@ if __name__ == '__main__':
     # evaluation
     test(net=net, 
         device=device, 
-        testset=dataset,
+        dataset=dataset,
         transform=BaseTransform(input_size),
-        thresh=args.visual_threshold,
+        vis_thresh=args.visual_threshold,
         class_colors=class_colors,
         class_names=class_names,
         class_indexs=class_indexs,
-        dataset=args.dataset
+        dataset_name=args.dataset
         )

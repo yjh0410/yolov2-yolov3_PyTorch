@@ -5,7 +5,6 @@ import random
 import argparse
 import time
 import cv2
-import math
 import numpy as np
 
 import torch
@@ -14,8 +13,8 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data import VOC_CLASSES, VOC_ROOT, VOCDetection
-from data import coco_root, COCODataset
+from data.voc0712 import VOCDetection
+from data.coco2017 import COCODataset
 from data import config
 from data import BaseTransform, detection_collate
 
@@ -58,12 +57,16 @@ def parse_args():
                         help='use tensorboard')
     parser.add_argument('--save_folder', default='weights/', type=str, 
                         help='Gamma update for SGD')
+    parser.add_argument('--vis', action='store_true', default=False,
+                        help='visualize target.')
 
     # model
     parser.add_argument('-v', '--version', default='yolo_v2',
                         help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny')
     
     # dataset
+    parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
+                        help='dataset root')
     parser.add_argument('-d', '--dataset', default='voc',
                         help='voc or coco')
     
@@ -151,55 +154,42 @@ def train():
     else:
         hr = False
     
-    # mosaic augmentation
-    if args.mosaic:
-        print('use Mosaic Augmentation ...')
-
     # multi-scale
     if args.multi_scale:
         print('use the multi-scale trick ...')
         train_size = cfg['train_size']
         val_size = cfg['val_size']
     else:
-        train_size = val_size = cfg['train_size']  # cfg['val_size']
+        train_size = val_size = cfg['train_size']
 
-    # mosaic augmentation
+    # Model ENA
     if args.ema:
         print('use EMA trick ...')
 
     # dataset and evaluator
     if args.dataset == 'voc':
-        data_dir = VOC_ROOT
+        data_dir = os.path.join(args.data_root, 'VOCdevkit')
         num_classes = 20
-        dataset = VOCDetection(root=data_dir, 
-                                transform=SSDAugmentation(train_size),
-                                base_transform=ColorAugmentation(train_size),
-                                mosaic=args.mosaic
-                                )
+        dataset = VOCDetection(data_dir=data_dir, 
+                                transform=SSDAugmentation(train_size))
 
         evaluator = VOCAPIEvaluator(data_root=data_dir,
                                     img_size=val_size,
                                     device=device,
-                                    transform=BaseTransform(val_size),
-                                    labelmap=VOC_CLASSES
-                                    )
+                                    transform=BaseTransform(val_size))
 
     elif args.dataset == 'coco':
-        data_dir = coco_root
+        data_dir = os.path.join(args.data_root, 'COCO')
         num_classes = 80
         dataset = COCODataset(
                     data_dir=data_dir,
-                    img_size=train_size,
-                    transform=SSDAugmentation(train_size),
-                    base_transform=ColorAugmentation(train_size),
-                    mosaic=args.mosaic)
+                    transform=SSDAugmentation(train_size))
 
         evaluator = COCOAPIEvaluator(
                         data_dir=data_dir,
                         img_size=val_size,
                         device=device,
-                        transform=BaseTransform(val_size)
-                        )
+                        transform=BaseTransform(val_size))
     
     else:
         print('unknow dataset !! Only support voc and coco !!')
@@ -318,11 +308,12 @@ def train():
                 # interpolate
                 images = torch.nn.functional.interpolate(images, size=train_size, mode='bilinear', align_corners=False)
             
-            # make labels
             targets = [label.tolist() for label in targets]
-            # 可视化数据，以便查看预处理部分是否有问题，将下面两行取消注释即可
-            # vis_data(images, targets, train_size)
-            # continue
+            # visualize labels
+            if args.vis:
+                vis_data(images, targets, train_size)
+                continue
+            # make labels
             if model_name == 'yolov2_d19' or model_name == 'yolov2_r50' or model_name == 'yolov2_slim':
                 targets = tools.gt_creator(input_size=train_size, 
                                            stride=net.stride, 
@@ -435,7 +426,7 @@ def train():
             # set train mode.
             model_eval.trainable = True
             model_eval.set_grid(train_size)
-            model_eval.eval()
+            model_eval.train()
     
     if args.tfboard:
         tblogger.close()
@@ -455,9 +446,8 @@ def vis_data(images, targets, input_size):
 
     img = images[0].permute(1, 2, 0).cpu().numpy()[:, :, ::-1]
     img = ((img * std + mean)*255).astype(np.uint8)
-    cv2.imwrite('1.jpg', img)
+    img = img.copy()
 
-    img_ = cv2.imread('1.jpg')
     for box in targets[0]:
         xmin, ymin, xmax, ymax = box[:-1]
         # print(xmin, ymin, xmax, ymax)
@@ -465,9 +455,9 @@ def vis_data(images, targets, input_size):
         ymin *= input_size
         xmax *= input_size
         ymax *= input_size
-        cv2.rectangle(img_, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
+        cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
 
-    cv2.imshow('img', img_)
+    cv2.imshow('img', img)
     cv2.waitKey(0)
 
 

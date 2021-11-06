@@ -1,13 +1,22 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import Conv
+from utils.modules import Conv
 from backbone import *
 import numpy as np
 import tools
 
+
 class YOLOv3(nn.Module):
-    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.50, anchor_size=None, hr=False):
+    def __init__(self, 
+                 device, 
+                 input_size=None, 
+                 num_classes=20, 
+                 trainable=False, 
+                 conf_thresh=0.001, 
+                 nms_thresh=0.50, 
+                 anchor_size=None, 
+                 hr=False):
         super(YOLOv3, self).__init__()
         self.device = device
         self.input_size = input_size
@@ -22,7 +31,7 @@ class YOLOv3(nn.Module):
         self.grid_cell, self.stride_tensor, self.all_anchors_wh = self.create_grid(input_size)
 
         # backbone darknet-53
-        self.backbone = darknet53(pretrained=trainable, hr=hr)
+        self.backbone = darknet53(pretrained=False, hr=hr)
         
         # s = 32
         self.conv_set_3 = nn.Sequential(

@@ -84,15 +84,15 @@ During testing stage, I set conf thresh as 0.001 and set nms thresh as 0.5 to ob
 
 I visualize some detection results whose score is over 0.3 on VOC 2007 test:
 
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000000.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000003.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000006.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000029.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000030.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000039.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000065.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000070.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/000072.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000000.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000003.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000006.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000029.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000030.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000039.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000065.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000070.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000072.jpg)
 
 COCO:
 
@@ -175,17 +175,17 @@ My YOLOv3 is very stronger and better, right?
 
 I also visualize some detection results whose score is over 0.3 on COCO 2017-val:
 
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/000003.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/000077.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/003422.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/003853.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/003970.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004040.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004157.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004283.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004862.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004985.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/test_results/COCO-val/004988.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/000003.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/000077.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/003422.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/003853.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/003970.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004040.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004157.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004283.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004862.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004985.jpg)
+![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004988.jpg)
 
 So, just have fun !
 

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import Conv, SPP
+from utils.modules import Conv, SPP
 from backbone import *
 import numpy as np
 import tools

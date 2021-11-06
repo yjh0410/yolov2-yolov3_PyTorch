@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import Conv, reorg_layer
+from utils.modules import Conv, reorg_layer
 from backbone import *
 import numpy as np
 import tools

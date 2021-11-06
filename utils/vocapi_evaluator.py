@@ -4,31 +4,24 @@
     Licensed under The MIT License [see LICENSE for details]
 """
 
-import torch
-import torch.nn as nn
-import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
-from data import VOCDetection
+from data.voc0712 import VOCDetection, VOC_CLASSES
 import sys
 import os
 import time
 import numpy as np
 import pickle
-
-if sys.version_info[0] == 2:
-    import xml.etree.cElementTree as ET
-else:
-    import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET
 
 
 class VOCAPIEvaluator():
     """ VOC AP Evaluation class """
-    def __init__(self, data_root, img_size, device, transform, labelmap, set_type='test', year='2007', display=False):
+    def __init__(self, data_root, img_size, device, transform, set_type='test', year='2007', display=False):
         self.data_root = data_root
         self.img_size = img_size
         self.device = device
         self.transform = transform
-        self.labelmap = labelmap
+        self.labelmap = VOC_CLASSES
         self.set_type = set_type
         self.year = year
         self.display = display
@@ -41,7 +34,7 @@ class VOCAPIEvaluator():
         self.output_dir = self.get_output_dir('voc_eval/', self.set_type)
 
         # dataset
-        self.dataset = VOCDetection(root=data_root, 
+        self.dataset = VOCDetection(data_dir=data_root, 
                                     image_sets=[('2007', set_type)],
                                     transform=transform
                                     )

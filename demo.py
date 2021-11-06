@@ -1,34 +1,23 @@
 import argparse
 import os
-import torch
-import torch.nn as nn
-import torch.backends.cudnn as cudnn
-from data import BaseTransform, VOC_CLASSES, coco_class_index, coco_class_labels
-from data import config
 import numpy as np
 import cv2
-import tools
 import time
+import torch
+from data.coco2017 import coco_class_index, coco_class_labels
+from data import config, BaseTransform
 
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='YOLO Demo Detection')
-
-    parser.add_argument('-v', '--version', default='yolo_v2',
-                        help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny')
-    parser.add_argument('--trained_model', default='weights/',
-                        type=str, help='Trained state_dict file path to open')
+    # basic
     parser.add_argument('--mode', default='image',
                         type=str, help='Use the data from image, video or camera')
     parser.add_argument('-size', '--input_size', default=416, type=int,
                         help='input_size')
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='Use cuda')
-    parser.add_argument('--conf_thresh', default=0.1, type=float,
-                        help='Confidence threshold')
-    parser.add_argument('--nms_thresh', default=0.50, type=float,
-                        help='NMS threshold')
     parser.add_argument('--path_to_img', default='data/demo/images/',
                         type=str, help='The path to image files')
     parser.add_argument('--path_to_vid', default='data/demo/videos/',
@@ -37,30 +26,57 @@ def parse_args():
                         type=str, help='The path to save the detection results')
     parser.add_argument('-vs', '--visual_threshold', default=0.3,
                         type=float, help='visual threshold')
+    # model
+    parser.add_argument('-v', '--version', default='yolo_v2',
+                        help='yolov2_d19, yolov2_r50, yolov2_slim, yolov3, yolov3_spp, yolov3_tiny')
+    parser.add_argument('--conf_thresh', default=0.1, type=float,
+                        help='NMS threshold')
+    parser.add_argument('--nms_thresh', default=0.45, type=float,
+                        help='NMS threshold')
+    parser.add_argument('--trained_model', default='weights/',
+                        type=str, help='Trained state_dict file path to open')
     
     return parser.parse_args()
                     
 
-def vis(img, bboxs, scores, cls_inds, class_color, thresh=0.3):
-        
-    for i, box in enumerate(bboxs):
-        if scores[i] > thresh:
-            cls_indx = cls_inds[i]
-            cls_id = coco_class_index[int(cls_indx)]
-            cls_name = coco_class_labels[cls_id]
-            mess = '%s: %.3f' % (cls_name, scores[i])
-            # bounding box
-            xmin, ymin, xmax, ymax = box
-            box_w = int(xmax - xmin)
-            cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_color[int(cls_indx)], 2)
-            cv2.rectangle(img, (int(xmin), int(abs(ymin)-15)), (int(xmin+box_w*0.55), int(ymin)), class_color[int(cls_indx)], -1)
+def plot_bbox_labels(img, bbox, label, cls_color, test_scale=0.4):
+    x1, y1, x2, y2 = bbox
+    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+    t_size = cv2.getTextSize(label, 0, fontScale=1, thickness=2)[0]
+    # plot bbox
+    cv2.rectangle(img, (x1, y1), (x2, y2), cls_color, 2)
+    # plot title bbox
+    cv2.rectangle(img, (x1, y1-t_size[1]), (int(x1 + t_size[0] * test_scale), y1), cls_color, -1)
+    # put the test on the title bbox
+    cv2.putText(img, label, (int(x1), int(y1 - 5)), 0, test_scale, (0, 0, 0), 1, lineType=cv2.LINE_AA)
 
-            cv2.putText(img, mess, (int(xmin), int(ymin)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
     return img
 
 
-def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_to_vid=None, path_to_save=None):
-    class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(80)]
+def visualize(img, bboxes, scores, cls_inds, class_colors, vis_thresh=0.3):
+    ts = 0.4
+    for i, bbox in enumerate(bboxes):
+        if scores[i] > vis_thresh:
+            cls_color = class_colors[int(cls_inds[i])]
+            cls_id = coco_class_index[int(cls_inds[i])]
+            mess = '%s: %.2f' % (coco_class_labels[cls_id], scores[i])
+            img = plot_bbox_labels(img, bbox, mess, cls_color, test_scale=ts)
+
+    return img
+
+
+def detect(net, 
+           device, 
+           transform, 
+           vis_thresh, 
+           mode='image', 
+           path_to_img=None, 
+           path_to_vid=None, 
+           path_to_save=None):
+    # class color
+    class_colors = [(np.random.randint(255),
+                     np.random.randint(255),
+                     np.random.randint(255)) for _ in range(80)]
     save_path = os.path.join(path_to_save, mode)
     os.makedirs(save_path, exist_ok=True)
 
@@ -70,32 +86,34 @@ def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         while True:
             ret, frame = cap.read()
-            cv2.imshow('current frame', frame)
-            if cv2.waitKey(1) == ord('q'):
+            if ret:
+                if cv2.waitKey(1) == ord('q'):
+                    break
+                img_h, img_w = frame.shape[:2]
+                scale = np.array([[img_w, img_h, img_w, img_h]])
+
+                # prepare
+                x = torch.from_numpy(transform(frame)[0][:, :, ::-1]).permute(2, 0, 1)
+                x = x.unsqueeze(0).to(device)
+                # inference
+                t0 = time.time()
+                bboxes, scores, cls_inds = net(x)
+                t1 = time.time()
+                print("detection time used ", t1-t0, "s")
+
+                # rescale
+                bboxes *= scale
+
+                frame_processed = visualize(img=frame, 
+                                            bboxes=bboxes,
+                                            scores=scores, 
+                                            cls_inds=cls_inds,
+                                            class_colors=class_colors,
+                                            vis_thresh=vis_thresh)
+                cv2.imshow('detection result', frame_processed)
+                cv2.waitKey(1)
+            else:
                 break
-            x = torch.from_numpy(transform(frame)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
-            x = x.unsqueeze(0).to(device)
-
-            t0 = time.time()
-            detections = net(x)
-            t1 = time.time()
-            print("detection time used ", t1-t0, "s")
-            # scale each detection back up to the original image
-            scale = np.array([[frame.shape[1], frame.shape[0],
-                                frame.shape[1], frame.shape[0]]])
-            bboxs, scores, cls_inds = detections
-            # map the boxes to origin image scale
-            bboxs *= scale
-
-            frame_processed = vis(img=frame, 
-                                  bboxs=bboxs,
-                                  scores=scores, 
-                                  cls_inds=cls_inds,
-                                  class_color=class_color,
-                                  thresh=thresh
-                                  )
-            cv2.imshow('detection result', frame_processed)
-            cv2.waitKey(1)
         cap.release()
         cv2.destroyAllWindows()
 
@@ -103,27 +121,28 @@ def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_
     elif mode == 'image':
         for i, img_id in enumerate(os.listdir(path_to_img)):
             img = cv2.imread(path_to_img + '/' + img_id, cv2.IMREAD_COLOR)
+            img_h, img_w = img.shape[:2]
+            scale = np.array([[img_w, img_h, img_w, img_h]])
+            
+            # prepare
             x = torch.from_numpy(transform(img)[0][:, :, ::-1]).permute(2, 0, 1)
             x = x.unsqueeze(0).to(device)
-
+            # inference
             t0 = time.time()
-            detections = net(x)
+            bboxes, scores, cls_inds = net(x)
             t1 = time.time()
             print("detection time used ", t1-t0, "s")
-            # scale each detection back up to the original image
-            scale = np.array([[img.shape[1], img.shape[0],
-                                img.shape[1], img.shape[0]]])
-            bboxs, scores, cls_inds = detections
-            # map the boxes to origin image scale
-            bboxs *= scale
 
-            img_processed = vis(img=img, 
-                                bboxs=bboxs,
-                                scores=scores, 
-                                cls_inds=cls_inds,
-                                class_color=class_color,
-                                thresh=thresh
-                                )
+            # rescale
+            bboxes *= scale
+
+            img_processed = visualize(img=img, 
+                                    bboxes=bboxes,
+                                    scores=scores, 
+                                    cls_inds=cls_inds,
+                                    class_colors=class_colors,
+                                    vis_thresh=vis_thresh)
+
             cv2.imshow('detection', img_processed)
             cv2.imwrite(os.path.join(save_path, str(i).zfill(6)+'.jpg'), img_processed)
             cv2.waitKey(0)
@@ -142,31 +161,27 @@ def detect(net, device, transform, thresh, mode='image', path_to_img=None, path_
             
             if ret:
                 # ------------------------- Detection ---------------------------
-                t0 = time.time()
+                img_h, img_w = frame.shape[:2]
+                scale = np.array([[img_w, img_h, img_w, img_h]])
+                # prepare
                 x = torch.from_numpy(transform(frame)[0][:, :, ::-1]).permute(2, 0, 1)
                 x = x.unsqueeze(0).to(device)
-
-                t0 = time.time()
                 # inference
-                detections = net(x)
+                t0 = time.time()
+                bboxes, scores, cls_inds = net(x)
                 t1 = time.time()
                 print("detection time used ", t1-t0, "s")
 
-                # scale each detection back up to the original image
-                scale = np.array([[frame.shape[1], frame.shape[0],
-                                    frame.shape[1], frame.shape[0]]])
-                bboxs, scores, cls_inds = detections
-
-                # map the boxes to origin image scale
-                bboxs *= scale
+                # rescale
+                bboxes *= scale
                 
-                frame_processed = vis(img=img, 
-                                      bboxs=bboxs,
-                                      scores=scores, 
-                                      cls_inds=cls_inds,
-                                      class_color=class_color,
-                                      thresh=thresh
-                                      )
+                frame_processed = visualize(img=frame, 
+                                            bboxes=bboxes,
+                                            scores=scores, 
+                                            cls_inds=cls_inds,
+                                            class_colors=class_colors,
+                                            vis_thresh=vis_thresh)
+
                 frame_processed_resize = cv2.resize(frame_processed, save_size)
                 out.write(frame_processed_resize)
                 cv2.imshow('detection', frame_processed)
@@ -222,11 +237,13 @@ def run():
     input_size = [args.input_size, args.input_size]
     
     # build model
-    anchor_size = cfg['anchor_size_voc'] if args.dataset == 'voc' else cfg['anchor_size_coco']
+    anchor_size = cfg['anchor_size_coco']
     net = yolo_net(device=device, 
                    input_size=input_size, 
                    num_classes=80, 
                    trainable=False, 
+                   conf_thresh=args.conf_thresh,
+                   nms_thresh=args.nms_thresh,
                    anchor_size=anchor_size)
 
     # load weight
