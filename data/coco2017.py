@@ -164,7 +164,7 @@ class COCODataset(Dataset):
 
 if __name__ == "__main__":
     def base_transform(image, size, mean):
-        x = cv2.resize(image, (size[1], size[0])).astype(np.float32)
+        x = cv2.resize(image, (size, size)).astype(np.float32)
         x -= mean
         x = x.astype(np.float32)
         return x
@@ -180,13 +180,12 @@ if __name__ == "__main__":
     img_size = 640
     dataset = COCODataset(
                 data_dir='/mnt/share/ssd2/dataset/COCO/',
-                transform=BaseTransform([img_size, img_size], (0, 0, 0)))
+                transform=BaseTransform(img_size, (0, 0, 0)))
     
     for i in range(1000):
         im, gt, h, w = dataset.pull_item(i)
         img = im.permute(1,2,0).numpy()[:, :, (2, 1, 0)].astype(np.uint8)
-        cv2.imwrite('-1.jpg', img)
-        img = cv2.imread('-1.jpg')
+        img = img.copy()
 
         for box in gt:
             xmin, ymin, xmax, ymax, _ = box
