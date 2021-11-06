@@ -24,6 +24,7 @@ class YOLOv3(nn.Module):
         self.trainable = trainable
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
+        self.topk = 3000
         self.stride = [8, 16, 32]
         self.anchor_size = torch.tensor(anchor_size).view(3, len(anchor_size) // 3, 2)
         self.num_anchors = self.anchor_size.size(1)
@@ -204,7 +205,13 @@ class YOLOv3(nn.Module):
         scores = scores[keep]
         cls_inds = cls_inds[keep]
 
-        return bboxes, scores, cls_inds
+        # topk
+        scores_sorted, scores_sorted_inds = np.sort(scores), np.argsort(scores)
+        topk_scores, topk_scores_inds = scores_sorted[:self.topk], scores_sorted_inds[:self.topk]
+        topk_bboxes = bboxes[topk_scores_inds]
+        topk_cls_inds = cls_inds[topk_scores_inds]
+
+        return topk_bboxes, topk_scores, topk_cls_inds
 
 
     def forward(self, x, target=None):
