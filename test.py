@@ -31,7 +31,7 @@ parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
 parser.add_argument('-d', '--dataset', default='voc',
                     help='voc or coco')
 # visualize
-parser.add_argument('--visual_threshold', default=0.3, type=float,
+parser.add_argument('-vs', '--visual_threshold', default=0.25, type=float,
                     help='Final confidence threshold')
 parser.add_argument('--show', action='store_true', default=False,
                     help='show the visulization results.')
