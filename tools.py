@@ -349,7 +349,7 @@ def iou_score(bboxes_a, bboxes_b):
 
     en = (tl < br).type(tl.type()).prod(dim=1)
     area_i = torch.prod(br - tl, 1) * en  # * ((tl < br).all())
-    return area_i / (area_a + area_b - area_i)
+    return area_i / (area_a + area_b - area_i + 1e-14)
 
 
 def loss(pred_conf, pred_cls, pred_txtytwth, pred_iou, label):

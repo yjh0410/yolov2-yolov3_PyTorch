@@ -73,6 +73,8 @@ def parse_args():
     # train trick
     parser.add_argument('-hr', '--high_resolution', action='store_true', default=False,
                         help='use hi-res pre-trained backbone.')  
+    parser.add_argument('--no_warmup', action='store_true', default=False,
+                        help='do not use warmup')
     parser.add_argument('-ms', '--multi_scale', action='store_true', default=False,
                         help='use multi-scale trick')      
     parser.add_argument('--mosaic', action='store_true', default=False,
@@ -276,6 +278,7 @@ def train():
     epoch_size = len(dataset) // (batch_size * args.num_gpu)
 
     best_map = -100.
+    warmup = not args.no_warmup
 
     t0 = time.time()
     # start training loop
@@ -290,11 +293,16 @@ def train():
     
         for iter_i, (images, targets) in enumerate(dataloader):
             # WarmUp strategy for learning rate
-            if epoch < args.wp_epoch:
-                tmp_lr = base_lr * pow((iter_i+epoch*epoch_size)*1. / (args.wp_epoch*epoch_size), 4)
+            ni = iter_i + epoch * epoch_size
+            # warmup
+            if epoch < args.wp_epoch and warmup:
+                nw = args.wp_epoch * epoch_size
+                tmp_lr = base_lr * pow(ni / nw, 4)
                 set_lr(optimizer, tmp_lr)
 
-            elif epoch == args.wp_epoch and iter_i == 0:
+            elif epoch == args.wp_epoch and iter_i == 0 and warmup:
+                # warmup is over
+                warmup = False
                 tmp_lr = base_lr
                 set_lr(optimizer, tmp_lr)
 
@@ -328,7 +336,7 @@ def train():
                                                  )
 
             # to device
-            images = images.to(device)
+            images = images.float().to(device)
             targets = torch.tensor(targets).float().to(device)
 
             # forward
@@ -348,6 +356,7 @@ def train():
 
             # check NAN for loss
             if torch.isnan(total_loss):
+                print('nan')
                 continue
 
             # backprop

@@ -214,7 +214,8 @@ class RandomSampleCrop(object):
         height, width, _ = image.shape
         while True:
             # randomly choose a mode
-            mode = random.choice(self.sample_options)
+            sample_id = np.random.randint(len(self.sample_options))
+            mode = self.sample_options[sample_id]
             if mode is None:
                 return image, boxes, labels
 
@@ -288,34 +289,6 @@ class RandomSampleCrop(object):
                 return current_image, current_boxes, current_labels
 
 
-class Expand(object):
-    def __init__(self, mean):
-        self.mean = mean
-
-    def __call__(self, image, boxes, labels):
-        if random.randint(2):
-            return image, boxes, labels
-
-        height, width, depth = image.shape
-        ratio = random.uniform(1, 4)
-        left = random.uniform(0, width*ratio - width)
-        top = random.uniform(0, height*ratio - height)
-
-        expand_image = np.zeros(
-            (int(height*ratio), int(width*ratio), depth),
-            dtype=image.dtype)
-        expand_image[:, :, :] = self.mean
-        expand_image[int(top):int(top + height),
-                     int(left):int(left + width)] = image
-        image = expand_image
-
-        boxes = boxes.copy()
-        boxes[:, :2] += (int(left), int(top))
-        boxes[:, 2:] += (int(left), int(top))
-
-        return image, boxes, labels
-
-
 class RandomMirror(object):
     def __call__(self, image, boxes, classes):
         _, width, _ = image.shape
@@ -380,14 +353,12 @@ class PhotometricDistort(object):
 class SSDAugmentation(object):
     def __init__(self, size=416, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
         self.mean = mean
-        self.mean_255 = (mean[0]*255, mean[1]*255, mean[2]*255)
         self.size = size
         self.std = std
         self.augment = Compose([
             ConvertFromInts(),
             ToAbsoluteCoords(),
             PhotometricDistort(),
-            Expand(self.mean_255),
             RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),

@@ -42,6 +42,18 @@ class YOLOv2R50(nn.Module):
         self.pred = nn.Conv2d(1024, self.num_anchors*(1 + 4 + self.num_classes), 1)
 
 
+        if self.trainable:
+            # init bias
+            self.init_bias()
+
+
+    def init_bias(self):               
+        # init bias
+        init_prob = 0.01
+        bias_value = -torch.log(torch.tensor((1. - init_prob) / init_prob))
+        nn.init.constant_(self.pred.bias[..., :self.num_anchors], bias_value)
+
+
     def create_grid(self, input_size):
         w, h = input_size, input_size
         # generate grid cells
@@ -214,8 +226,7 @@ class YOLOv2R50(nn.Module):
             iou_pred = tools.iou_score(x1y1x2y2_pred, x1y1x2y2_gt).view(B, -1, 1)
 
             # 将IoU作为置信度的学习目标
-            with torch.no_grad():
-                gt_conf = iou_pred.clone()
+            gt_conf = iou_pred.clone().detach()
 
             txtytwth_pred = txtytwth_pred.view(B, H*W*self.num_anchors, 4)
             # 将IoU作为置信度的学习目标 
