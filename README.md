@@ -1,5 +1,26 @@
 # Update
-I'm trying to write a tutorial to guide users to train, test and eval their own dataset.
+Recently, I optimize my YOLO project:
+
+https://github.com/yjh0410/PyTorch_YOLO-Family
+
+On the COCO-val:
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8>       </th><td bgcolor=white> Backbone </td><td bgcolor=white> Size </td><td bgcolor=white> FPS </td><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td><td bgcolor=white>  GFLOPs  </td><td bgcolor=white>  Params  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> YOLO-Nano</th><td bgcolor=white> ShuffleNetv2-1.0x </td><td bgcolor=white> 512 </td><td bgcolor=white>     </td><td bgcolor=white> 21.6 </td><td bgcolor=white> 40.0 </td><td bgcolor=white> 20.5 </td><td bgcolor=white> 7.4 </td><td bgcolor=white> 22.7 </td><td bgcolor=white> 32.3 </td><td bgcolor=white> 1.65 </td><td bgcolor=white> 1.86M </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLO-Tiny</th><td bgcolor=white> CSPDarkNet-Tiny </td><td bgcolor=white> 512 </td><td bgcolor=white>     </td><td bgcolor=white> 26.6 </td><td bgcolor=white> 46.1 </td><td bgcolor=white> 26.9 </td><td bgcolor=white> 13.5 </td><td bgcolor=white> 30.0 </td><td bgcolor=white> 35.0 </td><td bgcolor=white> 5.52 </td><td bgcolor=white> 7.66M </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv1</th><td bgcolor=white> ResNet50 </td><td bgcolor=white> 640 </td><td bgcolor=white>     </td><td bgcolor=white> 35.2 </td><td bgcolor=white> 54.7 </td><td bgcolor=white> 37.1 </td><td bgcolor=white>  14.3 </td><td bgcolor=white>  39.5 </td><td bgcolor=white>  53.4 </td><td bgcolor=white>  41.96   </td><td bgcolor=white> 44.54M </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv2</th><td bgcolor=white> ResNet50 </td><td bgcolor=white> 640 </td><td bgcolor=white>     </td><td bgcolor=white> 36.3 </td><td bgcolor=white> 56.6 </td><td bgcolor=white> 37.7 </td><td bgcolor=white>  15.1 </td><td bgcolor=white>  41.1 </td><td bgcolor=white>  54.0 </td><td bgcolor=white>  42.10   </td><td bgcolor=white> 44.89M </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv3</th><td bgcolor=white> DarkNet53 </td><td bgcolor=white> 640 </td><td bgcolor=white>     </td><td bgcolor=white> 38.7 </td><td bgcolor=white> 60.2 </td><td bgcolor=white> 40.7 </td><td bgcolor=white>  21.3 </td><td bgcolor=white> 41.7 </td><td bgcolor=white> 51.7  </td><td bgcolor=white>  76.41   </td><td bgcolor=white> 57.25M </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> YOLOv4</th><td bgcolor=white> CSPDarkNet53 </td><td bgcolor=white> 640 </td><td bgcolor=white>     </td><td bgcolor=white> 40.5 </td><td bgcolor=white> 60.4 </td><td bgcolor=white> 43.5 </td><td bgcolor=white> 24.2 </td><td bgcolor=white> 44.8 </td><td bgcolor=white> 52.0 </td><td bgcolor=white>  60.55   </td><td bgcolor=white> 52.00M </td></tr>
+
+</table></tbody>
+
 
 I wish this version of yolo can help everyone who is interested in Object Detection.
 
