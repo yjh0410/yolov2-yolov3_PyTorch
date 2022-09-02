@@ -9,7 +9,7 @@ In my new YOLO project, you can enjoy:
 - YOLOv3
 - YOLOv3 with SPP
 - YOLOv3 with DilatedEncoder
-- YOLOv4-Exp ~ (I'm trying to make it better)
+- YOLOv4
 - YOLO-Tiny
 - YOLO-Nano
 
@@ -20,8 +20,8 @@ In this project, you can enjoy:
 - YOLOv2 with ResNet-50
 - YOLOv2Slim
 - YOLOv3
-- YOLOv3Spp
-- YOLOv3Tiny
+- YOLOv3-Spp
+- YOLOv3-Tiny
 
 
 I just want to provide a good YOLO project for everyone who is interested in Object Detection.
@@ -95,15 +95,15 @@ During testing stage, I set conf thresh as 0.001 and set nms thresh as 0.5 to ob
 
 I visualize some detection results whose score is over 0.3 on VOC 2007 test:
 
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000000.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000003.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000006.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000029.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000030.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000039.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000065.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000070.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/000072.jpg)
+![Image](./visulaizations/000000.jpg)
+![Image](./visulaizations/000003.jpg)
+![Image](./visulaizations/000006.jpg)
+![Image](./visulaizations/000029.jpg)
+![Image](./visulaizations/000030.jpg)
+![Image](./visulaizations/000039.jpg)
+![Image](./visulaizations/000065.jpg)
+![Image](./visulaizations/000070.jpg)
+![Image](./visulaizations/000072.jpg)
 
 COCO:
 
@@ -186,17 +186,17 @@ My YOLOv3 is very stronger and better, right?
 
 I also visualize some detection results whose score is over 0.3 on COCO 2017-val:
 
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/000003.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/000077.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/003422.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/003853.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/003970.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004040.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004157.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004283.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004862.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004985.jpg)
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/visulaizations/COCO-val/004988.jpg)
+![Image](./visulaizations/COCO-val/000003.jpg)
+![Image](./visulaizations/COCO-val/000077.jpg)
+![Image](./visulaizations/COCO-val/003422.jpg)
+![Image](./visulaizations/COCO-val/003853.jpg)
+![Image](./visulaizations/COCO-val/003970.jpg)
+![Image](./visulaizations/COCO-val/004040.jpg)
+![Image](./visulaizations/COCO-val/004157.jpg)
+![Image](./visulaizations/COCO-val/004283.jpg)
+![Image](./visulaizations/COCO-val/004862.jpg)
+![Image](./visulaizations/COCO-val/004985.jpg)
+![Image](./visulaizations/COCO-val/004988.jpg)
 
 So, just have fun !
 
@@ -220,7 +220,7 @@ My YOLOv3SPP is not better than my YOLOv3. It is a little confusing ...
 # YOLOv2Slim
 I build a very simple lightweight backbone: darknet_tiny
 
-![Image](https://github.com/yjh0410/pytorch-yolo-v2-v3/blob/master/img_file/darknet_tiny.png)
+![Image](./img_file/darknet_tiny.png)
 
 I replace the darknet19 used in YOLOv2 with darknet_tiny.
 
