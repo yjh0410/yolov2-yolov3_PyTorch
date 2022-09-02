@@ -71,8 +71,6 @@ def parse_args():
                         help='voc or coco')
     
     # train trick
-    parser.add_argument('-hr', '--high_resolution', action='store_true', default=False,
-                        help='use hi-res pre-trained backbone.')  
     parser.add_argument('--no_warmup', action='store_true', default=False,
                         help='do not use warmup')
     parser.add_argument('-ms', '--multi_scale', action='store_true', default=False,
@@ -126,10 +124,6 @@ def train():
         from models.yolov2_r50 import YOLOv2R50 as yolo_net
         cfg = config.yolov2_r50_cfg
 
-    elif model_name == 'yolov2_slim':
-        from models.yolov2_slim import YOLOv2Slim as yolo_net
-        cfg = config.yolov2_slim_cfg
-
     elif model_name == 'yolov3':
         from models.yolov3 import YOLOv3 as yolo_net
         cfg = config.yolov3_d53_cfg
@@ -140,7 +134,7 @@ def train():
 
     elif model_name == 'yolov3_tiny':
         from models.yolov3_tiny import YOLOv3tiny as yolo_net
-        cfg = config.yolov3tiny_cfg
+        cfg = config.yolov3_tiny_cfg
     else:
         print('Unknown model name...')
         exit(0)
@@ -207,8 +201,7 @@ def train():
                    input_size=train_size, 
                    num_classes=num_classes, 
                    trainable=True, 
-                   anchor_size=anchor_size, 
-                   hr=hr)
+                   anchor_size=anchor_size)
     model = net
 
     # SyncBatchNorm

@@ -152,9 +152,16 @@ class ResNet(nn.Module):
         c4 = self.layer3(c3)
         c5 = self.layer4(c4)
 
-        return c3, c4, c5
-            
-def resnet18(pretrained=False, hr_pretrained=False, **kwargs):
+        output = {
+            'layer1': c3,
+            'layer2': c4,
+            'layer3': c5
+        }
+
+        return output
+
+
+def resnet18(pretrained=False, **kwargs):
     """Constructs a ResNet-18 model.
 
     Args:
@@ -163,11 +170,7 @@ def resnet18(pretrained=False, hr_pretrained=False, **kwargs):
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
         # strict = False as we don't need fc layer params.
-        if hr_pretrained:
-            print('Loading the high resolution pretrained model ...')
-            model.load_state_dict(torch.load("backbone/weights/resnet18_hr_10.pth"), strict=False)
-        else:
-            model.load_state_dict(model_zoo.load_url(model_urls['resnet18']), strict=False)
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']), strict=False)
     return model
 
 def resnet34(pretrained=False, **kwargs):
@@ -214,12 +217,37 @@ def resnet152(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
     return model
 
-if __name__=='__main__':
-    #model = torchvision.models.resnet50()
-    print("found ", torch.cuda.device_count(), " GPU(s)")
-    device = torch.device("cuda")
-    model = resnet101(detection=True).to(device)
-    print(model)
 
-    input = torch.randn(1, 3, 512, 512).to(device)
-    output = model(input)
+def build_resnet(model_name='resnet18', pretrained=False):
+    
+    if model_name == 'resnet18':
+        model = resnet18(pretrained=pretrained)
+    
+    elif model_name == 'resnet34':
+        model = resnet34(pretrained=pretrained)
+    
+    elif model_name == 'resnet50':
+        model = resnet50(pretrained=pretrained)
+    
+    elif model_name == 'resnet101':
+        model = resnet101(pretrained=pretrained)
+
+    elif model_name == 'resnet152':
+        model = resnet152(pretrained=pretrained)
+    
+
+    return model
+
+
+if __name__ == "__main__":
+    import time
+
+    model = build_resnet(model_name='resnet18', pretrained=True)
+    x = torch.randn(1, 3, 224, 224)
+    t0 = time.time()
+    output = model(x)
+    t1 = time.time()
+    print('Time: ', t1 - t0)
+
+    for k in output.keys():
+        print('{} : {}'.format(k, output[k].shape))

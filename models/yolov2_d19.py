@@ -1,13 +1,14 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from utils.modules import Conv, reorg_layer
-from backbone import *
-import numpy as np
+
+from backbone import build_backbone
 import tools
 
+
 class YOLOv2D19(nn.Module):
-    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.5, anchor_size=None, hr=False):
+    def __init__(self, device, input_size=None, num_classes=20, trainable=False, conf_thresh=0.001, nms_thresh=0.5, anchor_size=None):
         super(YOLOv2D19, self).__init__()
         self.device = device
         self.input_size = input_size
@@ -21,7 +22,7 @@ class YOLOv2D19(nn.Module):
         self.grid_cell, self.all_anchor_wh = self.create_grid(input_size)
 
         # backbone darknet-19
-        self.backbone = darknet19(pretrained=trainable, hr=hr)
+        self.backbone = build_backbone(model_name='darknet19', pretrained=trainable)
         
         # detection head
         self.convsets_1 = nn.Sequential(
@@ -59,38 +60,39 @@ class YOLOv2D19(nn.Module):
 
     def decode_xywh(self, txtytwth_pred):
         """
-            Input:
-                txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
-            Output:
-                xywh_pred : [B, H*W*anchor_n, 4] containing [xmin, ymin, xmax, ymax]
+            Input: \n
+                txtytwth_pred : [B, H*W, anchor_n, 4] \n
+            Output: \n
+                xywh_pred : [B, H*W*anchor_n, 4] \n
         """
-        # b_x = sigmoid(tx) + gride_x,  b_y = sigmoid(ty) + gride_y
         B, HW, ab_n, _ = txtytwth_pred.size()
-        xy_pred = torch.sigmoid(txtytwth_pred[:, :, :, :2]) + self.grid_cell
-        # b_w = anchor_w * exp(tw),     b_h = anchor_h * exp(th)
-        wh_pred = torch.exp(txtytwth_pred[:, :, :, 2:]) * self.all_anchor_wh
-        # [H*W, anchor_n, 4] -> [H*W*anchor_n, 4]
-        xywh_pred = torch.cat([xy_pred, wh_pred], -1).view(B, HW*ab_n, 4) * self.stride
+        # b_x = sigmoid(tx) + gride_x
+        # b_y = sigmoid(ty) + gride_y
+        xy_pred = torch.sigmoid(txtytwth_pred[..., :2]) + self.grid_cell
+        # b_w = anchor_w * exp(tw)
+        # b_h = anchor_h * exp(th)
+        wh_pred = torch.exp(txtytwth_pred[..., 2:]) * self.all_anchor_wh
+        # [B, H*W, anchor_n, 4] -> [B, H*W*anchor_n, 4]
+        xywh_pred = torch.cat([xy_pred, wh_pred], -1).view(B, -1, 4) * self.stride
 
         return xywh_pred
+    
 
-
-    def decode_boxes(self, txtytwth_pred, requires_grad=False):
+    def decode_boxes(self, txtytwth_pred):
         """
-            Input:
-                txtytwth_pred : [B, H*W, anchor_n, 4] containing [tx, ty, tw, th]
-            Output:
-                x1y1x2y2_pred : [B, H*W*anchor_n, 4] containing [xmin, ymin, xmax, ymax]
+            Input: \n
+                txtytwth_pred : [B, H*W, anchor_n, 4] \n
+            Output: \n
+                x1y1x2y2_pred : [B, H*W*anchor_n, 4] \n
         """
-        # [H*W*anchor_n, 4]
+        # txtytwth -> cxcywh
         xywh_pred = self.decode_xywh(txtytwth_pred)
 
-        # [center_x, center_y, w, h] -> [xmin, ymin, xmax, ymax]
-        x1y1x2y2_pred = torch.zeros_like(xywh_pred, requires_grad=requires_grad)
-        x1y1x2y2_pred[:, :, 0] = (xywh_pred[:, :, 0] - xywh_pred[:, :, 2] / 2)
-        x1y1x2y2_pred[:, :, 1] = (xywh_pred[:, :, 1] - xywh_pred[:, :, 3] / 2)
-        x1y1x2y2_pred[:, :, 2] = (xywh_pred[:, :, 0] + xywh_pred[:, :, 2] / 2)
-        x1y1x2y2_pred[:, :, 3] = (xywh_pred[:, :, 1] + xywh_pred[:, :, 3] / 2)
+        # cxcywh -> x1y1x2y2
+        x1y1x2y2_pred = torch.zeros_like(xywh_pred)
+        x1y1_pred = xywh_pred[..., :2] - xywh_pred[..., 2:] * 0.5
+        x2y2_pred = xywh_pred[..., :2] + xywh_pred[..., 2:] * 0.5
+        x1y1x2y2_pred = torch.cat([x1y1_pred, x2y2_pred], dim=-1)
         
         return x1y1x2y2_pred
 
@@ -102,20 +104,20 @@ class YOLOv2D19(nn.Module):
         x2 = dets[:, 2]  #xmax
         y2 = dets[:, 3]  #ymax
 
-        areas = (x2 - x1) * (y2 - y1)                 # the size of bbox
-        order = scores.argsort()[::-1]                        # sort bounding boxes by decreasing order
+        areas = (x2 - x1) * (y2 - y1)
+        order = scores.argsort()[::-1]
 
-        keep = []                                             # store the final bounding boxes
+        keep = []
         while order.size > 0:
-            i = order[0]                                      #the index of the bbox with highest confidence
-            keep.append(i)                                    #save it to keep
+            i = order[0]
+            keep.append(i)
             xx1 = np.maximum(x1[i], x1[order[1:]])
             yy1 = np.maximum(y1[i], y1[order[1:]])
             xx2 = np.minimum(x2[i], x2[order[1:]])
             yy2 = np.minimum(y2[i], y2[order[1:]])
 
-            w = np.maximum(1e-28, xx2 - xx1)
-            h = np.maximum(1e-28, yy2 - yy1)
+            w = np.maximum(1e-10, xx2 - xx1)
+            h = np.maximum(1e-10, yy2 - yy1)
             inter = w * h
 
             # Cross Area / (bbox + particular area - Cross Area)
@@ -161,86 +163,110 @@ class YOLOv2D19(nn.Module):
         return bboxes, scores, cls_inds
 
 
-    def forward(self, x, target=None):
-        # backbone主干网络
-        _, c4, c5 = self.backbone(x)
+    @ torch.no_grad()
+    def inference(self, x):
+        # backbone
+        feats = self.backbone(x)
 
-        # head
-        p5 = self.convsets_1(c5)
-
-        # 处理c4特征
-        p4 = self.reorg(self.route_layer(c4))
-
-        # 融合
+        # reorg layer
+        p5 = self.convsets_1(feats['layer3'])
+        p4 = self.reorg(self.route_layer(feats['layer2']))
         p5 = torch.cat([p4, p5], dim=1)
 
         # head
         p5 = self.convsets_2(p5)
 
-        # 预测
-        prediction = self.pred(p5)
+        # pred
+        pred = self.pred(p5)
 
-        B, abC, H, W = prediction.size()
+        B, abC, H, W = pred.size()
 
         # [B, num_anchor * C, H, W] -> [B, H, W, num_anchor * C] -> [B, H*W, num_anchor*C]
-        prediction = prediction.permute(0, 2, 3, 1).contiguous().view(B, H*W, abC)
+        pred = pred.permute(0, 2, 3, 1).contiguous().view(B, H*W, abC)
 
-        # 从pred中分离出objectness预测、类别class预测、bbox的txtytwth预测  
         # [B, H*W*num_anchor, 1]
-        conf_pred = prediction[:, :, :1 * self.num_anchors].contiguous().view(B, H*W*self.num_anchors, 1)
+        conf_pred = pred[:, :, :1 * self.num_anchors].contiguous().view(B, H*W*self.num_anchors, 1)
         # [B, H*W, num_anchor, num_cls]
-        cls_pred = prediction[:, :, 1 * self.num_anchors : (1 + self.num_classes) * self.num_anchors].contiguous().view(B, H*W*self.num_anchors, self.num_classes)
+        cls_pred = pred[:, :, 1 * self.num_anchors : (1 + self.num_classes) * self.num_anchors].contiguous().view(B, H*W*self.num_anchors, self.num_classes)
         # [B, H*W, num_anchor, 4]
-        txtytwth_pred = prediction[:, :, (1 + self.num_classes) * self.num_anchors:].contiguous()
-        
-        # train
-        if self.trainable:
-            txtytwth_pred = txtytwth_pred.view(B, H*W, self.num_anchors, 4)
+        reg_pred = pred[:, :, (1 + self.num_classes) * self.num_anchors:].contiguous()
+        reg_pred = reg_pred.view(B, H*W, self.num_anchors, 4)
+
+        # decode box
+        box_pred = torch.clamp((self.decode_boxes(reg_pred) / self.input_size), 0., 1.)
+
+        # batch size = 1
+        conf_pred = conf_pred[0]
+        cls_pred = cls_pred[0]
+        box_pred = box_pred[0]
+
+        # score
+        scores = torch.sigmoid(conf_pred) * torch.softmax(cls_pred, dim=-1)
+
+        # to cpu
+        scores = scores.to('cpu').numpy()
+        bboxes = bboxes.to('cpu').numpy()
+
+        # post-process
+        bboxes, scores, cls_inds = self.postprocess(bboxes, scores)
+
+        return bboxes, scores, cls_inds
+
+
+    def forward(self, x, target=None):
+        if not self.trainable:
+            return self.inference(x)
+        else:
+            # backbone
+            feats = self.backbone(x)
+
+            # reorg layer
+            p5 = self.convsets_1(feats['layer3'])
+            p4 = self.reorg(self.route_layer(feats['layer2']))
+            p5 = torch.cat([p4, p5], dim=1)
+
+            # head
+            p5 = self.convsets_2(p5)
+
+            # pred
+            pred = self.pred(p5)
+
+            B, abC, H, W = pred.size()
+
+            # [B, num_anchor * C, H, W] -> [B, H, W, num_anchor * C] -> [B, H*W, num_anchor*C]
+            pred = pred.permute(0, 2, 3, 1).contiguous().view(B, H*W, abC)
+
+            # [B, H*W*num_anchor, 1]
+            conf_pred = pred[:, :, :1 * self.num_anchors].contiguous().view(B, H*W*self.num_anchors, 1)
+            # [B, H*W, num_anchor, num_cls]
+            cls_pred = pred[:, :, 1 * self.num_anchors : (1 + self.num_classes) * self.num_anchors].contiguous().view(B, H*W*self.num_anchors, self.num_classes)
+            # [B, H*W, num_anchor, 4]
+            reg_pred = pred[:, :, (1 + self.num_classes) * self.num_anchors:].contiguous()
+            reg_pred = reg_pred.view(B, H*W, self.num_anchors, 4)
+
             # decode bbox
-            x1y1x2y2_pred = (self.decode_boxes(txtytwth_pred) / self.input_size).view(-1, 4)
+            x1y1x2y2_pred = (self.decode_boxes(reg_pred) / self.input_size).view(-1, 4)
             x1y1x2y2_gt = target[:, :, 7:].view(-1, 4)
+            reg_pred = reg_pred.view(B, H*W*self.num_anchors, 4)
 
-            # 计算预测框和真实框之间的IoU
+            # set conf target
             iou_pred = tools.iou_score(x1y1x2y2_pred, x1y1x2y2_gt).view(B, -1, 1)
+            gt_conf = iou_pred.clone().detach()
 
-            # 将IoU作为置信度的学习目标
-            with torch.no_grad():
-                gt_conf = iou_pred.clone()
-
-            txtytwth_pred = txtytwth_pred.view(B, H*W*self.num_anchors, 4)
-            # 将IoU作为置信度的学习目标 
             # [obj, cls, txtytwth, x1y1x2y2] -> [conf, obj, cls, txtytwth]
             target = torch.cat([gt_conf, target[:, :, :7]], dim=2)
 
-            # 计算损失
-            conf_loss, cls_loss, bbox_loss, iou_loss = tools.loss(pred_conf=conf_pred, 
-                                                                  pred_cls=cls_pred,
-                                                                  pred_txtytwth=txtytwth_pred,
-                                                                  pred_iou=iou_pred,
-                                                                  label=target
-                                                                  )
+            # loss
+            (
+                conf_loss,
+                cls_loss,
+                bbox_loss,
+                iou_loss
+            ) = tools.loss(pred_conf=conf_pred,
+                           pred_cls=cls_pred,
+                           pred_txtytwth=reg_pred,
+                           pred_iou=iou_pred,
+                           label=target
+                           )
 
             return conf_loss, cls_loss, bbox_loss, iou_loss   
-
-        # test
-        else:
-            txtytwth_pred = txtytwth_pred.view(B, H*W, self.num_anchors, 4)
-            with torch.no_grad():
-                # batch size = 1
-                # 测试时，笔者默认batch是1，
-                # 因此，我们不需要用batch这个维度，用[0]将其取走。
-                # [B, H*W*num_anchor, 1] -> [H*W*num_anchor, 1]
-                conf_pred = torch.sigmoid(conf_pred)[0]
-                # [B, H*W*num_anchor, 4] -> [H*W*num_anchor, 4]
-                bboxes = torch.clamp((self.decode_boxes(txtytwth_pred) / self.input_size)[0], 0., 1.)
-                # [B, H*W*num_anchor, C] -> [H*W*num_anchor, C], 
-                scores = torch.softmax(cls_pred[0, :, :], dim=1) * conf_pred
-
-                # 将预测放在cpu处理上，以便进行后处理
-                scores = scores.to('cpu').numpy()
-                bboxes = bboxes.to('cpu').numpy()
-
-                # 后处理
-                bboxes, scores, cls_inds = self.postprocess(bboxes, scores)
-
-                return bboxes, scores, cls_inds
