@@ -203,8 +203,8 @@ class YOLOv2D19(nn.Module):
         scores = torch.sigmoid(conf_pred) * torch.softmax(cls_pred, dim=-1)
 
         # normalize bbox
-        bboxes = torch.clamp(box_pred / self.inference, 0., 1.)
-        
+        bboxes = torch.clamp(box_pred / self.input_size, 0., 1.)
+
         # to cpu
         scores = scores.to('cpu').numpy()
         bboxes = bboxes.to('cpu').numpy()
