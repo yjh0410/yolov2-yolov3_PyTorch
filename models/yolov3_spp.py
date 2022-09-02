@@ -263,10 +263,9 @@ class YOLOv3Spp(nn.Module):
         conf_pred = torch.cat(total_conf_pred, dim=1)
         cls_pred = torch.cat(total_cls_pred, dim=1)
         reg_pred = torch.cat(total_reg_pred, dim=1)
-
-        reg_pred = reg_pred.view(B, -1, self.num_anchors, 4)
         # decode bbox
-        box_pred = torch.clamp((self.decode_boxes(reg_pred) / self.input_size), 0., 1.)
+        reg_pred = reg_pred.view(B, -1, self.num_anchors, 4)
+        box_pred = self.decode_boxes(reg_pred)
 
         # batch size = 1
         conf_pred = conf_pred[0]
@@ -275,6 +274,9 @@ class YOLOv3Spp(nn.Module):
 
         # score
         scores = torch.sigmoid(conf_pred) * torch.softmax(cls_pred, dim=-1)
+
+        # normalize bbox
+        bboxes = torch.clamp(box_pred / self.input_size, 0., 1.)
 
         # to cpu
         scores = scores.to('cpu').numpy()
