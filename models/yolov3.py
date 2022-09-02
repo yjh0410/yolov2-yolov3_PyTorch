@@ -112,9 +112,9 @@ class YOLOv3(nn.Module):
         """
         # b_x = sigmoid(tx) + gride_x,  b_y = sigmoid(ty) + gride_y
         B, HW, ab_n, _ = txtytwth_pred.size()
-        c_xy_pred = (torch.sigmoid(txtytwth_pred[:, :, :, :2]) + self.grid_cell) * self.stride_tensor
+        c_xy_pred = (torch.sigmoid(txtytwth_pred[..., :2]) + self.grid_cell) * self.stride_tensor
         # b_w = anchor_w * exp(tw),     b_h = anchor_h * exp(th)
-        b_wh_pred = torch.exp(txtytwth_pred[:, :, :, 2:]) * self.all_anchors_wh
+        b_wh_pred = torch.exp(txtytwth_pred[..., 2:]) * self.all_anchors_wh
         # [B, H*W, anchor_n, 4] -> [B, H*W*anchor_n, 4]
         xywh_pred = torch.cat([c_xy_pred, b_wh_pred], -1).view(B, HW*ab_n, 4)
 
