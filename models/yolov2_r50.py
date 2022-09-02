@@ -206,10 +206,9 @@ class YOLOv2R50(nn.Module):
         cls_pred = pred[:, :, 1 * self.num_anchors : (1 + self.num_classes) * self.num_anchors].contiguous().view(B, H*W*self.num_anchors, self.num_classes)
         # [B, H*W, num_anchor, 4]
         reg_pred = pred[:, :, (1 + self.num_classes) * self.num_anchors:].contiguous()
-        reg_pred = reg_pred.view(B, H*W, self.num_anchors, 4)
-
         # decode box
-        box_pred = torch.clamp((self.decode_boxes(reg_pred) / self.input_size), 0., 1.)
+        reg_pred = reg_pred.view(B, H*W, self.num_anchors, 4)
+        box_pred = self.decode_boxes(reg_pred)
 
         # batch size = 1
         conf_pred = conf_pred[0]
@@ -218,6 +217,9 @@ class YOLOv2R50(nn.Module):
 
         # score
         scores = torch.sigmoid(conf_pred) * torch.softmax(cls_pred, dim=-1)
+
+        # normalize bbox
+        bboxes = torch.clamp(box_pred / self.input_size, 0., 1.)
 
         # to cpu
         scores = scores.to('cpu').numpy()
