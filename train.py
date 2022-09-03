@@ -216,7 +216,7 @@ def train():
         model_copy.trainable = False
         model_copy.eval()
         FLOPs_and_Params(model=model_copy, 
-                         img_size=cfg['test_size'], 
+                         img_size=train_size, 
                          device=device)
         model_copy.trainable = True
         model_copy.train()
