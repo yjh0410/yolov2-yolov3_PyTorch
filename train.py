@@ -6,6 +6,7 @@ import argparse
 import time
 import cv2
 import numpy as np
+from copy import deepcopy
 
 import torch
 import torch.optim as optim
@@ -83,8 +84,10 @@ def parse_args():
     # DDP train
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
                         help='distributed training')
-    parser.add_argument('--local_rank', type=int, default=0, 
-                        help='local_rank')
+    parser.add_argument('--dist_url', default='env://', 
+                        help='url used to set up distributed training')
+    parser.add_argument('--world_size', default=1, type=int,
+                        help='number of distributed processes')
     parser.add_argument('--sybn', action='store_true', default=False, 
                         help='use sybn.')
 
@@ -97,17 +100,15 @@ def train():
     print("----------------------------------------------------------")
 
     # set distributed
-    local_rank = 0
+    print('World size: {}'.format(distributed_utils.get_world_size()))
     if args.distributed:
-        dist.init_process_group(backend="nccl", init_method="env://")
-        local_rank = torch.distributed.get_rank()
-        print(local_rank)
-        torch.cuda.set_device(local_rank)
+        distributed_utils.init_distributed_mode(args)
+        print("git:\n  {}\n".format(distributed_utils.get_sha()))
 
     # cuda
     if args.cuda:
         print('use cuda')
-        cudnn.benchmark = True
+        # cudnn.benchmark = True
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
@@ -142,13 +143,6 @@ def train():
     # path to save model
     path_to_save = os.path.join(args.save_folder, args.dataset, args.version)
     os.makedirs(path_to_save, exist_ok=True)
-
-    # use hi-res backbone
-    if args.high_resolution:
-        print('use hi-res backbone')
-        hr = True
-    else:
-        hr = False
     
     # multi-scale
     if args.multi_scale:
@@ -203,40 +197,56 @@ def train():
                    trainable=True, 
                    anchor_size=anchor_size)
     model = net
+    model = model.to(device).train()
 
     # SyncBatchNorm
-    if args.sybn and args.cuda and args.num_gpu > 1:
+    if args.sybn and args.distributed:
         print('use SyncBatchNorm ...')
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    model = model.to(device)
-    # compute FLOPs and Params
-    FLOPs_and_Params(model=model, size=train_size)
+    # DDP
+    model_without_ddp = model
+    if args.distributed:
+        model = DDP(model, device_ids=[args.gpu])
+        model_without_ddp = model.module
 
-    # distributed
+    # compute FLOPs and Params
+    if distributed_utils.is_main_process:
+        model_copy = deepcopy(model_without_ddp)
+        model_copy.trainable = False
+        model_copy.eval()
+        FLOPs_and_Params(model=model_copy, 
+                         img_size=cfg['test_size'], 
+                         device=device)
+        model_copy.trainable = True
+        model_copy.train()
+    if args.distributed:
+        # wait for all processes to synchronize
+        dist.barrier()
+
+    # dataloader
+    batch_size = args.batch_size * distributed_utils.get_world_size()
     if args.distributed and args.num_gpu > 1:
-        print('using DDP ...')
-        model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-        # dataloader
         dataloader = torch.utils.data.DataLoader(
                         dataset=dataset, 
-                        batch_size=args.batch_size, 
+                        batch_size=batch_size, 
                         collate_fn=detection_collate,
                         num_workers=args.num_workers,
                         pin_memory=True,
+                        drop_last=True,
                         sampler=torch.utils.data.distributed.DistributedSampler(dataset)
                         )
 
     else:
-        model = model.train().to(device)
         # dataloader
         dataloader = torch.utils.data.DataLoader(
                         dataset=dataset, 
                         shuffle=True,
-                        batch_size=args.batch_size, 
+                        batch_size=batch_size, 
                         collate_fn=detection_collate,
                         num_workers=args.num_workers,
-                        pin_memory=True
+                        pin_memory=True,
+                        drop_last=True
                         )
 
     # keep training
@@ -258,7 +268,7 @@ def train():
         tblogger = SummaryWriter(log_path)
     
     # optimizer setup
-    base_lr = args.lr
+    base_lr = (args.lr / 16) * batch_size
     tmp_lr = base_lr
     optimizer = optim.SGD(model.parameters(), 
                             lr=base_lr, 
@@ -266,11 +276,9 @@ def train():
                             weight_decay=args.weight_decay
                             )
 
-    batch_size = args.batch_size
     max_epoch = cfg['max_epoch']
-    epoch_size = len(dataset) // (batch_size * args.num_gpu)
-
-    best_map = -100.
+    epoch_size = len(dataloader)
+    best_map = -1.
     warmup = not args.no_warmup
 
     t0 = time.time()
@@ -314,8 +322,9 @@ def train():
             if args.vis:
                 vis_data(images, targets, train_size)
                 continue
-            # make labels
-            if model_name == 'yolov2_d19' or model_name == 'yolov2_r50' or model_name == 'yolov2_slim':
+
+            # label assignment
+            if model_name in ['yolov2_d19', 'yolov2_r50']:
                 targets = tools.gt_creator(input_size=train_size, 
                                            stride=net.stride, 
                                            label_lists=targets, 
@@ -345,11 +354,11 @@ def train():
                              total_loss=total_loss
                             )
 
-            loss_dict_reduced = distributed_utils.reduce_loss_dict(loss_dict)
+            loss_dict_reduced = distributed_utils.reduce_dict(loss_dict)
 
             # check NAN for loss
             if torch.isnan(total_loss):
-                print('nan')
+                print('loss is nan !!')
                 continue
 
             # backprop
@@ -362,7 +371,7 @@ def train():
                 ema.update(model)
 
             # display
-            if iter_i % 10 == 0:
+            if distributed_utils.is_main_process() and iter_i % 10 == 0:
                 if args.tfboard:
                     # viz loss
                     tblogger.add_scalar('conf loss',  loss_dict_reduced['conf_loss'].item(),  iter_i + epoch * epoch_size)
@@ -371,65 +380,76 @@ def train():
                     tblogger.add_scalar('iou loss',  loss_dict_reduced['iou_loss'].item(),  iter_i + epoch * epoch_size)
                 
                 t1 = time.time()
-                outstream = ('[Epoch %d/%d][Iter %d/%d][lr %.6f]'
-                        '[Loss: conf %.2f || cls %.2f || box %.2f || iou %.2f || size %d || time: %.2f]'
-                        % (epoch+1, 
-                           max_epoch, 
-                           iter_i, 
-                           epoch_size, 
-                           tmp_lr,
-                           loss_dict_reduced['conf_loss'].item(),
-                           loss_dict_reduced['cls_loss'].item(), 
-                           loss_dict_reduced['box_loss'].item(),
-                           loss_dict_reduced['iou_loss'].item(),
-                           train_size, 
-                           t1-t0))
+                cur_lr = [param_group['lr']  for param_group in optimizer.param_groups]
+                # basic infor
+                log =  '[Epoch: {}/{}]'.format(epoch+1, max_epoch)
+                log += '[Iter: {}/{}]'.format(iter_i, epoch_size)
+                log += '[lr: {:.6f}]'.format(cur_lr[0])
+                # loss infor
+                for k in loss_dict_reduced.keys():
+                    log += '[{}: {:.2f}]'.format(k, loss_dict[k])
 
-                print(outstream, flush=True)
+                # other infor
+                log += '[time: {:.2f}]'.format(t1 - t0)
+                log += '[size: {}]'.format(train_size)
 
+                # print log infor
+                print(log, flush=True)
+                
                 t0 = time.time()
 
-        # evaluation
-        if (epoch + 1) % args.eval_epoch == 0:
-            if args.ema:
-                model_eval = ema.ema
-            else:
-                model_eval = model.module if args.distributed else model
+        if distributed_utils.is_main_process():
+            # evaluation
+            if (epoch % args.eval_epoch) == 0 or (epoch == max_epoch - 1):
+                if args.ema:
+                    model_eval = ema.ema
+                else:
+                    model_eval = model_without_ddp
 
-            # set eval mode
-            model_eval.trainable = False
-            model_eval.set_grid(val_size)
-            model_eval.eval()
+                # check evaluator
+                if evaluator is None:
+                    print('No evaluator ... save model and go on training.')
+                    print('Saving state, epoch: {}'.format(epoch + 1))
+                    weight_name = '{}_epoch_{}.pth'.format(args.version, epoch + 1)
+                    checkpoint_path = os.path.join(path_to_save, weight_name)
+                    torch.save(model_eval.state_dict(), checkpoint_path)                      
+            
+                else:
+                    print('eval ...')
+                    # set eval mode
+                    model_eval.trainable = False
+                    model_eval.set_grid(val_size)
+                    model_eval.eval()
 
-            if local_rank == 0:
-                # evaluate
-                evaluator.evaluate(model_eval)
+                    # evaluate
+                    evaluator.evaluate(model_eval)
 
-                cur_map = evaluator.map if args.dataset == 'voc' else evaluator.ap50_95
-                if cur_map > best_map:
-                    # update best-map
-                    best_map = cur_map
-                    # save model
-                    print('Saving state, epoch:', epoch + 1)
-                    torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
-                                args.version + '_' + repr(epoch + 1) + '_' + str(round(best_map, 2)) + '.pth')
-                                )  
-                if args.tfboard:
-                    if args.dataset == 'voc':
-                        tblogger.add_scalar('07test/mAP', evaluator.map, epoch)
-                    elif args.dataset == 'coco':
-                        tblogger.add_scalar('val/AP50_95', evaluator.ap50_95, epoch)
-                        tblogger.add_scalar('val/AP50', evaluator.ap50, epoch)
+                    cur_map = evaluator.map
+                    if cur_map > best_map:
+                        # update best-map
+                        best_map = cur_map
+                        # save model
+                        print('Saving state, epoch:', epoch + 1)
+                        weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.version, epoch + 1, best_map*100)
+                        checkpoint_path = os.path.join(path_to_save, weight_name)
+                        torch.save(model_eval.state_dict(), checkpoint_path)  
 
-            # wait for all processes to synchronize
-            if args.distributed:
-                dist.barrier()
+                    if args.tfboard:
+                        if args.dataset == 'voc':
+                            tblogger.add_scalar('07test/mAP', evaluator.map, epoch)
+                        elif args.dataset == 'coco':
+                            tblogger.add_scalar('val/AP50_95', evaluator.ap50_95, epoch)
+                            tblogger.add_scalar('val/AP50', evaluator.ap50, epoch)
 
-            # set train mode.
-            model_eval.trainable = True
-            model_eval.set_grid(train_size)
-            model_eval.train()
-    
+                    # set train mode.
+                    model_eval.trainable = True
+                    model_eval.set_grid(train_size)
+                    model_eval.train()
+
+                # wait for all processes to synchronize
+                if args.distributed:
+                    dist.barrier()
+
     if args.tfboard:
         tblogger.close()
 
