@@ -34,7 +34,7 @@ def parse_args():
     # basic
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='use cuda.')
-    parser.add_argument('--batch_size', default=16, type=int, 
+    parser.add_argument('-bs', '--batch_size', default=16, type=int, 
                         help='Batch size for training')
     parser.add_argument('--lr', default=1e-3, type=float, 
                         help='initial learning rate')
