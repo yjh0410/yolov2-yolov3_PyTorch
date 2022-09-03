@@ -39,6 +39,19 @@ class YOLOv3tiny(nn.Module):
         self.conv_set_1 = Conv(384, 256, k=3, p=1)
         self.pred_1 = nn.Conv2d(256, self.num_anchors*(1 + 4 + self.num_classes), kernel_size=1)
     
+    
+        self.init_yolo()
+
+
+    def init_yolo(self):  
+        # Init head
+        init_prob = 0.01
+        bias_value = -torch.log(torch.tensor((1. - init_prob) / init_prob))
+        # init obj&cls pred
+        for pred in [self.pred_1, self.pred_2, self.pred_3]:
+            nn.init.constant_(pred.bias[..., :self.num_anchors], bias_value)
+            nn.init.constant_(pred.bias[..., self.num_anchors : (1 + self.num_classes) * self.num_anchors], bias_value)
+
 
     def create_grid(self, input_size):
         total_grid_xy = []
