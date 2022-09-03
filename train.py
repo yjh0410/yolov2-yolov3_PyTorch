@@ -287,6 +287,59 @@ def train():
         if args.distributed:
             dataloader.sampler.set_epoch(epoch)        
 
+        if distributed_utils.is_main_process():
+            # evaluation
+            if (epoch % args.eval_epoch) == 0 or (epoch == max_epoch - 1):
+                if args.ema:
+                    model_eval = ema.ema
+                else:
+                    model_eval = model_without_ddp
+
+                # check evaluator
+                if evaluator is None:
+                    print('No evaluator ... save model and go on training.')
+                    print('Saving state, epoch: {}'.format(epoch + 1))
+                    weight_name = '{}_epoch_{}.pth'.format(args.version, epoch + 1)
+                    checkpoint_path = os.path.join(path_to_save, weight_name)
+                    torch.save(model_eval.state_dict(), checkpoint_path)                      
+            
+                else:
+                    print('eval ...')
+                    # set eval mode
+                    model_eval.trainable = False
+                    model_eval.set_grid(val_size)
+                    model_eval.eval()
+
+                    # evaluate
+                    evaluator.evaluate(model_eval)
+
+                    cur_map = evaluator.map
+                    if cur_map > best_map:
+                        # update best-map
+                        best_map = cur_map
+                        # save model
+                        print('Saving state, epoch:', epoch + 1)
+                        weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.version, epoch + 1, best_map*100)
+                        checkpoint_path = os.path.join(path_to_save, weight_name)
+                        torch.save(model_eval.state_dict(), checkpoint_path)  
+
+                    if args.tfboard:
+                        if args.dataset == 'voc':
+                            tblogger.add_scalar('07test/mAP', evaluator.map, epoch)
+                        elif args.dataset == 'coco':
+                            tblogger.add_scalar('val/AP50_95', evaluator.ap50_95, epoch)
+                            tblogger.add_scalar('val/AP50', evaluator.ap50, epoch)
+
+                    # set train mode.
+                    model_eval.trainable = True
+                    model_eval.set_grid(train_size)
+                    model_eval.train()
+
+                # wait for all processes to synchronize
+                if args.distributed:
+                    dist.barrier()
+
+
         # use step lr
         if epoch in cfg['lr_epoch']:
             tmp_lr = tmp_lr * 0.1
