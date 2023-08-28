@@ -1,17 +1,17 @@
 # Update
-Recently, I optimize my YOLO project:
+Recently, I have released a new YOLO project:
 
-https://github.com/yjh0410/PyTorch_YOLO-Family
+https://github.com/yjh0410/PyTorch_YOLO_Tutorial
 
 In my new YOLO project, you can enjoy: 
 - a new and stronger YOLOv1
 - a new and stronger YOLOv2
 - YOLOv3
-- YOLOv3 with SPP
-- YOLOv3 with DilatedEncoder
 - YOLOv4
-- YOLO-Tiny
-- YOLO-Nano
+- YOLOv5
+- YOLOv7
+- YOLOX
+- RTCDet
 
 
 # This project
